@@ -1,0 +1,5 @@
+Flask
+GNews
+google-generativeai
+googlenewsdecoder
+feedparser

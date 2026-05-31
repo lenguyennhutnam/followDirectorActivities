@@ -1,0 +1,49 @@
+[
+  {
+    "name": "VnExpress",
+    "homepage_url": "https://vnexpress.net/",
+    "rss_url": "https://vnexpress.net/rss/tin-moi-nhat.rss"
+  },
+  {
+    "name": "Báo Tuổi trẻ",
+    "homepage_url": "https://tuoitre.vn/",
+    "rss_url": "https://tuoitre.vn/rss/tin-moi-nhat.htm"
+  },
+  {
+    "name": "Báo Thanh niên",
+    "homepage_url": "https://thanhnien.vn/",
+    "rss_url": "https://thanhnien.vn/rss/home.rss"
+  },
+  {
+    "name": "Báo Nhân Dân",
+    "homepage_url": "https://nhandan.vn/"
+  },
+  {
+    "name": "VietnamPlus (Thông tấn xã Việt Nam)",
+    "homepage_url": "https://www.vietnamplus.vn/"
+  },
+  {
+    "name": "Báo Chính phủ",
+    "homepage_url": "https://baochinhphu.vn/"
+  },
+  {
+    "name": "Báo Quân đội Nhân dân",
+    "homepage_url": "https://www.qdnd.vn/"
+  },
+  {
+    "name": "VOV (Đài Tiếng nói Việt Nam)",
+    "homepage_url": "https://vov.vn/"
+  },
+  {
+    "name": "VTV News (Đài Truyền hình Việt Nam)",
+    "homepage_url": "https://vtv.vn/"
+  },
+  {
+    "name": "Báo Công an Nhân dân",
+    "homepage_url": "https://cand.com.vn/"
+  },
+  {
+    "name": "https://dangcongsan.vn/uybankiemtra/",
+    "homepage_url": "https://dangcongsan.vn/uybankiemtra/"
+  }
+]
