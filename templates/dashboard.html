@@ -1,11 +1,14 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Giám sát tin tức</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet" />
   <link rel="stylesheet" href="/static/css/isr-theme.css?v=12" />
   <script>
     (function () {
@@ -13,15 +16,16 @@
         if (localStorage.getItem("ui-theme") === "light") {
           document.documentElement.setAttribute("data-theme", "light");
         }
-      } catch (e) {}
+      } catch (e) { }
     })();
   </script>
   <script src="/static/js/theme.js?v=2"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
 </head>
+
 <body class="page-dashboard">
   <div class="shell">
-    <aside class="sidebar">
+    <aside class="sidebar" id="sidebarEl">
       <div class="sidebar-brand">
         <div class="logo-row">
           <div class="logo-mark"><i data-lucide="radar"></i></div>
@@ -36,13 +40,8 @@
         <button type="button" class="btn btn-glass sidebar-settings-btn" id="btnOpenSettings">
           <i data-lucide="settings"></i> Cài đặt hệ thống
         </button>
-        <button
-          type="button"
-          class="btn btn-glass sidebar-settings-btn theme-toggle-btn theme-toggle-sidebar"
-          data-theme-toggle
-          aria-pressed="false"
-          title="Chuyển sang giao diện sáng"
-        >
+        <button type="button" class="btn btn-glass sidebar-settings-btn theme-toggle-btn theme-toggle-sidebar"
+          data-theme-toggle aria-pressed="false" title="Chuyển sang giao diện sáng">
           <i data-lucide="sun" data-theme-icon></i>
           <span data-theme-label>Giao diện sáng</span>
         </button>
@@ -52,45 +51,38 @@
         <div class="sidebar-scroll-head">
           <div class="sec-label sec-label-row">
             <span><i data-lucide="users"></i> Đối tượng</span>
-            <span class="search-hint" id="targetSearchHint" hidden></span>
+            <div style="display:flex;align-items:center;gap:6px">
+              <span class="search-hint" id="targetSearchHint" hidden></span>
+              <button type="button" class="btn btn-glass btn-icon btn-add-toggle" id="btnToggleAddForm"
+                title="Thêm đối tượng mới">
+                <i data-lucide="plus"></i>
+              </button>
+            </div>
           </div>
           <div class="sidebar-search" role="search">
             <label class="sidebar-search-field" for="targetSearchInput">
               <i data-lucide="search" aria-hidden="true"></i>
-              <input
-                class="inp-text sidebar-search-inp"
-                type="search"
-                id="targetSearchInput"
-                placeholder="Tìm tên hoặc chức vụ…"
-                autocomplete="off"
-                enterkeyhint="search"
-              />
-              <button
-                type="button"
-                class="btn btn-glass btn-icon sidebar-search-clear"
-                id="targetSearchClear"
-                title="Xóa tìm kiếm"
-                hidden
-              >
-                <i data-lucide="x"></i>
-              </button>
+              <input class="inp-text sidebar-search-inp" type="search" id="targetSearchInput"
+                placeholder="Tìm tên hoặc chức vụ…" autocomplete="off" enterkeyhint="search" />
             </label>
           </div>
-          <div class="target-form-hint" id="editHint">
-            <i data-lucide="pencil"></i>
-            <span id="editHintText">Đang sửa…</span>
-          </div>
-          <div class="add-row">
-            <input class="inp-text" type="text" id="targetName" placeholder="Họ tên" aria-label="Họ tên" />
-            <input class="inp-text" type="text" id="targetPos" placeholder="Chức vụ" aria-label="Chức vụ" />
-            <div class="target-form-actions" id="targetFormActions">
-              <button type="button" class="btn btn-glass" id="btnAddTarget" style="grid-column:1/-1">
-                <i data-lucide="plus" id="btnTargetIcon"></i>
-                <span id="btnTargetLabel">Thêm</span>
-              </button>
-              <button type="button" class="btn btn-glass" id="btnCancelEdit" style="display:none">
-                <i data-lucide="x"></i> Hủy
-              </button>
+          <div id="addFormCollapse" class="add-form-collapse" hidden>
+            <div class="target-form-hint" id="editHint">
+              <i data-lucide="pencil"></i>
+              <span id="editHintText">Đang sửa…</span>
+            </div>
+            <div class="add-row">
+              <input class="inp-text" type="text" id="targetName" placeholder="Họ tên" aria-label="Họ tên" />
+              <input class="inp-text" type="text" id="targetPos" placeholder="Chức vụ" aria-label="Chức vụ" />
+              <div class="target-form-actions" id="targetFormActions">
+                <button type="button" class="btn btn-glass" id="btnAddTarget" style="grid-column:1/-1">
+                  <i data-lucide="plus" id="btnTargetIcon"></i>
+                  <span id="btnTargetLabel">Thêm</span>
+                </button>
+                <button type="button" class="btn btn-glass" id="btnCancelEdit" style="display:none">
+                  <i data-lucide="x"></i> Hủy
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -101,6 +93,13 @@
       </div>
     </aside>
 
+    <div class="sidebar-edge" id="sidebarEdge">
+      <div class="sidebar-resize-handle" id="sidebarResizeHandle"></div>
+      <button class="sidebar-toggle-btn" id="btnSidebarToggle" title="Đóng/mở thanh bên">
+        <i data-lucide="chevron-left"></i>
+      </button>
+    </div>
+
     <main class="main">
       <header class="main-top">
         <div class="main-top-lead">
@@ -110,14 +109,8 @@
         <div class="main-actions">
           <div class="main-hours-bar" role="group" aria-label="Thời gian tìm kiếm">
             <span class="main-hours-label"><i data-lucide="clock"></i> Thời gian</span>
-            <input
-              class="inp-glass main-hours-inp"
-              type="text"
-              id="hoursRangeInput"
-              inputmode="decimal"
-              value="24"
-              aria-label="Số giờ hiển thị tin"
-            />
+            <input class="inp-glass main-hours-inp" type="text" id="hoursRangeInput" inputmode="decimal" value="24"
+              aria-label="Số giờ hiển thị tin" />
             <span class="unit-tag">giờ</span>
             <button type="button" class="btn btn-glass btn-icon" id="btnApplyHours" title="Áp dụng cửa sổ thời gian">
               <i data-lucide="check"></i>
@@ -130,6 +123,10 @@
           <button type="button" class="btn btn-primary" id="btnRunNow" title="Quét tất cả đối tượng trong danh sách">
             <span class="spinner" id="runSpinner"></span>
             <i data-lucide="play"></i> Quét tất cả
+          </button>
+          <button type="button" class="btn btn-danger" id="btnCancelScan" title="Hủy lượt quét đang chạy"
+            style="display:none">
+            <i data-lucide="square"></i> Hủy quét
           </button>
         </div>
       </header>
@@ -172,20 +169,18 @@
           <div class="setting-row setting-row-stack ai-mode-block">
             <div class="lbl">
               <strong>Chế độ AI khi quét</strong>
-              <span id="setAiScanModeHint">Chọn một chế độ — lưu ngay; quét thủ công và quét tự động đều dùng chế độ này.</span>
+              <span id="setAiScanModeHint">Chọn một chế độ — lưu ngay; quét thủ công và quét tự động đều dùng chế độ
+                này.</span>
             </div>
             <input type="hidden" id="setAiScanMode" value="activity" />
-            <div
-              class="ai-mode-picker"
-              id="setAiScanModePicker"
-              role="radiogroup"
-              aria-label="Chế độ AI khi quét"
-            ></div>
+            <div class="ai-mode-picker" id="setAiScanModePicker" role="radiogroup" aria-label="Chế độ AI khi quét">
+            </div>
           </div>
           <label class="setting-row">
             <div class="lbl">
               <strong>Chỉ báo chính thống</strong>
-              <span>Bật: chỉ hiển thị và quét tin từ danh sách bên dưới. Tắt: hiển thị mọi báo đã lưu; quét Google News không giới hạn danh sách.</span>
+              <span>Bật: chỉ hiển thị và quét tin từ danh sách bên dưới. Tắt: hiển thị mọi báo đã lưu; quét Google News
+                không giới hạn danh sách.</span>
             </div>
             <label class="toggle">
               <input type="checkbox" id="setFilterChinhThong" />
@@ -202,6 +197,18 @@
               <span class="track"></span>
             </label>
           </label>
+          <div class="setting-row setting-row-stack">
+            <div class="lbl">
+              <strong>Cách tìm kiếm</strong>
+            </div>
+            <select class="inp-num" id="setSearchMatchMode" style="width:100%">
+              <option value="related">Liên quan tên — Tên</option>
+              <option value="related_position">Liên quan chức vụ — Chức vụ</option>
+              <option value="exact_name">Chính xác tên — "Tên"</option>
+              <option value="exact_position">Chính xác chức vụ — "Chức vụ"</option>
+              <option value="exact">Chính xác tên + chức vụ — "Tên" "Chức vụ"</option>
+            </select>
+          </div>
           <label class="setting-row">
             <div class="lbl">
               <strong>Số tin tối đa / đối tượng</strong>
@@ -262,7 +269,8 @@
           <label class="setting-row">
             <div class="lbl">
               <strong>Gửi tin «không có hoạt động»</strong>
-              <span>Tắt (khuyên dùng): tránh spam và tránh 2 tin cùng đối tượng (trống rồi có bài). Chỉ gửi khi có tin mới.</span>
+              <span>Tắt (khuyên dùng): tránh spam và tránh 2 tin cùng đối tượng (trống rồi có bài). Chỉ gửi khi có tin
+                mới.</span>
             </div>
             <label class="toggle">
               <input type="checkbox" id="setTelegramNotifyEmpty" />
@@ -270,8 +278,10 @@
             </label>
           </label>
           <div class="press-add" style="grid-template-columns:1fr">
-            <input class="inp-text" type="password" id="setTelegramToken" placeholder="Bot token (từ @BotFather)" autocomplete="off" />
-            <input class="inp-text" type="text" id="setTelegramChatId" placeholder="Chat ID người/nhóm nhận (không phải ID bot)" />
+            <input class="inp-text" type="password" id="setTelegramToken" placeholder="Bot token (từ @BotFather)"
+              autocomplete="off" />
+            <input class="inp-text" type="text" id="setTelegramChatId"
+              placeholder="Chat ID người/nhóm nhận (không phải ID bot)" />
             <button type="button" class="btn btn-glass btn-sm" id="btnTelegramTest">
               <i data-lucide="send"></i> Gửi thử
             </button>
@@ -383,4 +393,5 @@
   <script src="/static/js/dashboard.js?v=31"></script>
   <script src="/static/js/settings.js?v=18"></script>
 </body>
+
 </html>

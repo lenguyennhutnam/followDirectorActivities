@@ -1,45 +1,31 @@
 [
   {
     "name": "VietnamPlus (Thông tấn xã Việt Nam)",
-    "homepage_url": "https://www.vietnamplus.vn/",
-    "category": "Core - General",
-    "note": "Nguồn tin gốc từ TTXVN, bao quát tất cả lãnh đạo"
+    "homepage_url": "https://www.vietnamplus.vn/"
   },
   {
     "name": "Báo Chính phủ",
-    "homepage_url": "https://baochinhphu.vn/",
-    "category": "Core - Government",
-    "note": "Chuyên sâu về Thủ tướng và các hoạt động điều hành Chính phủ"
+    "homepage_url": "https://baochinhphu.vn/"
   },
   {
     "name": "Báo Nhân Dân",
-    "homepage_url": "https://nhandan.vn/",
-    "category": "Core - Party",
-    "note": "Nguồn chuẩn về Tổng Bí thư, Chủ tịch nước và xây dựng Đảng"
+    "homepage_url": "https://nhandan.vn/"
   },
   {
     "name": "Báo điện tử Đảng Cộng sản - Ủy ban Kiểm tra",
-    "homepage_url": "https://dangcongsan.vn/uybankiemtra/",
-    "category": "Specialized - Inspection",
-    "note": "Theo dõi kỷ luật cán bộ và phòng chống tham nhũng"
+    "homepage_url": "https://dangcongsan.vn/uybankiemtra/"
   },
   {
     "name": "Báo Quân đội Nhân dân",
-    "homepage_url": "https://www.qdnd.vn/",
-    "category": "Specialized - Defense",
-    "note": "Theo dõi Bộ Quốc phòng và an ninh quốc gia"
+    "homepage_url": "https://www.qdnd.vn/"
   },
   {
     "name": "VTV News (Đài Truyền hình Việt Nam)",
-    "homepage_url": "https://vtv.vn/",
-    "category": "Multimedia",
-    "note": "Lấy video thời sự và hình ảnh trực tiếp của lãnh đạo"
+    "homepage_url": "https://vtv.vn/"
   },
   {
     "name": "VnExpress",
     "homepage_url": "https://vnexpress.net/",
-    "rss_url": "https://vnexpress.net/rss/tin-moi-nhat.rss",
-    "category": "Summary & Fast News",
-    "note": "Cập nhật nhanh, tóm tắt sự kiện dễ nắm bắt"
+    "rss_url": "https://vnexpress.net/rss/tin-moi-nhat.rss"
   }
 ]

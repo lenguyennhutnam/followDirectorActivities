@@ -55,6 +55,20 @@ function updateTargetScopeMeta(targetCount, hours) {
   el.textContent = `${nLabel} · ${hLabel}`;
 }
 
+function showAddForm() {
+  const collapse = document.getElementById("addFormCollapse");
+  const toggle = document.getElementById("btnToggleAddForm");
+  if (collapse) collapse.hidden = false;
+  if (toggle) toggle.classList.add("is-open");
+}
+
+function hideAddForm() {
+  const collapse = document.getElementById("addFormCollapse");
+  const toggle = document.getElementById("btnToggleAddForm");
+  if (collapse) collapse.hidden = true;
+  if (toggle) toggle.classList.remove("is-open");
+}
+
 function setEditMode(originalName, displayName, position, idx) {
   window.__EDITING_TARGET__ = originalName || null;
   const hint = document.getElementById("editHint");
@@ -68,6 +82,7 @@ function setEditMode(originalName, displayName, position, idx) {
   const posInp = document.getElementById("targetPos");
 
   if (originalName) {
+    showAddForm();
     nameInp.value = displayName || originalName;
     posInp.value = position || "";
     hint?.classList.add("visible");
@@ -81,6 +96,7 @@ function setEditMode(originalName, displayName, position, idx) {
       el.classList.toggle("editing", i === idx);
     });
   } else {
+    hideAddForm();
     nameInp.value = "";
     posInp.value = "";
     hint?.classList.remove("visible");
@@ -286,6 +302,18 @@ function renderTargets(cfg) {
     if (window.lucide) lucide.createIcons();
     return;
   }
+
+  const selectAllRow = document.createElement("div");
+  selectAllRow.className = "t-select-all-row";
+  selectAllRow.innerHTML = `
+    <label class="t-check-wrap" title="Chọn/bỏ tất cả">
+      <input type="checkbox" class="t-check-all" checked />
+    </label>
+    <span class="t-select-all-label">Chọn tất cả</span>`;
+  targetsList.appendChild(selectAllRow);
+  selectAllRow.querySelector(".t-check-all").addEventListener("change", (e) => {
+    targetsList.querySelectorAll(".t-check").forEach((cb) => { cb.checked = e.target.checked; });
+  });
   const hours = parseHoursRange();
   targets.forEach((t, idx) => {
     const name = t.name || "";
@@ -300,6 +328,9 @@ function renderTargets(cfg) {
     div.dataset.targetName = name;
     div.dataset.targetPosition = pos;
     div.innerHTML = `
+      <label class="t-check-wrap" title="Bao gồm trong «Quét tất cả»">
+        <input type="checkbox" class="t-check" checked />
+      </label>
       <div class="avatar">${escapeHtml(initials(name))}</div>
       <div>
         <div class="t-name">${escapeHtml(name)}</div>
@@ -606,6 +637,7 @@ function applyScanLockUi() {
 
   const btnRunNow = document.getElementById("btnRunNow");
   const runSpinner = document.getElementById("runSpinner");
+  const btnCancel = document.getElementById("btnCancelScan");
   if (btnRunNow) {
     btnRunNow.disabled = locked;
     btnRunNow.title = locked
@@ -616,6 +648,12 @@ function applyScanLockUi() {
   }
   if (runSpinner) {
     runSpinner.style.display = locked ? "inline-block" : "none";
+  }
+  if (btnCancel) {
+    btnCancel.style.display = locked ? "inline-flex" : "none";
+    btnCancel.disabled = false;
+    btnCancel.innerHTML = '<i data-lucide="square"></i> Hủy quét';
+    if (locked && window.lucide) lucide.createIcons({ nodes: [btnCancel] });
   }
 
   document.querySelectorAll("[data-scan-target], .btn-scan-target").forEach((btn) => {
@@ -707,18 +745,33 @@ function formatStatusScanMessage(st, targetName) {
   return msg;
 }
 
-async function runMonitorScan({ targetName = null } = {}) {
+function getCheckedTargetNames() {
+  const names = [];
+  document.querySelectorAll("#targetsList .t-item").forEach((item) => {
+    const cb = item.querySelector(".t-check");
+    if (cb && cb.checked) names.push(item.dataset.targetName || "");
+  });
+  return names.filter(Boolean);
+}
+
+async function runMonitorScan({ targetName = null, targetNames = null } = {}) {
   if (isScanLocked()) {
     return;
   }
   scanBusy = true;
   applyScanLockUi();
   try {
-    const label = targetName ? `Đang quét: ${targetName}…` : "Đang quét tất cả…";
+    const multi = Array.isArray(targetNames) && targetNames.length > 0;
+    const label = targetName
+      ? `Đang quét: ${targetName}…`
+      : multi
+      ? `Đang quét ${targetNames.length} đối tượng…`
+      : "Đang quét tất cả…";
     flashStatus(label, false);
     const hours = parseHoursRange();
     const body = { scan_hours: hours, ignore_history: true };
     if (targetName) body.target_name = targetName;
+    else if (multi) body.target_names = targetNames;
     const data = await postJson("/monitor/run", body);
     if (data.started) {
       setServerScanning(true);
@@ -816,13 +869,44 @@ function initDashboard() {
   const targetPos = document.getElementById("targetPos");
   const btnAddTarget = document.getElementById("btnAddTarget");
 
-  btnRunNow.addEventListener("click", () => runMonitorScan());
+  btnRunNow.addEventListener("click", () => {
+    const checked = getCheckedTargetNames();
+    const total = cfgTargets().length;
+    if (checked.length > 0 && checked.length < total) {
+      runMonitorScan({ targetNames: checked });
+    } else {
+      runMonitorScan();
+    }
+  });
+
+  document.getElementById("btnCancelScan")?.addEventListener("click", async () => {
+    const btn = document.getElementById("btnCancelScan");
+    if (btn) { btn.disabled = true; btn.textContent = "Đang hủy…"; }
+    try {
+      await postJson("/monitor/cancel", {});
+      flashStatus("Đã gửi yêu cầu hủy — đợi đối tượng hiện tại xong…", false);
+    } catch (e) {
+      flashStatus(e?.message || "Không thể hủy", false);
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i data-lucide="square"></i> Hủy quét'; if (window.lucide) lucide.createIcons(); }
+    }
+  });
 
   btnRefresh.addEventListener("click", () =>
     loadAll().catch((e) => {
       flashStatus(e?.message || String(e), false);
     })
   );
+
+  document.getElementById("btnToggleAddForm")?.addEventListener("click", () => {
+    const collapse = document.getElementById("addFormCollapse");
+    if (collapse?.hidden) {
+      setEditMode(null);
+      showAddForm();
+      document.getElementById("targetName")?.focus();
+    } else {
+      setEditMode(null);
+    }
+  });
 
   document.getElementById("btnCancelEdit")?.addEventListener("click", () => {
     setEditMode(null);
@@ -884,7 +968,63 @@ function initDashboard() {
 
 window.flashStatus = flashStatus;
 
+function initSidebar() {
+  const sidebar = document.getElementById("sidebarEl");
+  const toggleBtn = document.getElementById("btnSidebarToggle");
+  const resizeHandle = document.getElementById("sidebarResizeHandle");
+  if (!sidebar) return;
+
+  const COLLAPSE_KEY = "sidebar-collapsed";
+  const WIDTH_KEY = "sidebar-w";
+
+  // Restore saved width
+  const savedW = localStorage.getItem(WIDTH_KEY);
+  if (savedW) document.documentElement.style.setProperty("--sidebar-w", savedW);
+
+  // Restore collapse state
+  if (localStorage.getItem(COLLAPSE_KEY) === "1") {
+    sidebar.classList.add("collapsed");
+  }
+
+  // Toggle collapse
+  toggleBtn?.addEventListener("click", () => {
+    sidebar.classList.toggle("collapsed");
+    localStorage.setItem(COLLAPSE_KEY, sidebar.classList.contains("collapsed") ? "1" : "0");
+    if (window.lucide) lucide.createIcons();
+  });
+
+  // Drag to resize
+  resizeHandle?.addEventListener("mousedown", (e) => {
+    if (sidebar.classList.contains("collapsed")) return;
+    e.preventDefault();
+    const startX = e.clientX;
+    const startW = sidebar.offsetWidth;
+    resizeHandle.classList.add("dragging");
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+
+    const onMove = (e) => {
+      const newW = Math.max(200, Math.min(520, startW + e.clientX - startX));
+      document.documentElement.style.setProperty("--sidebar-w", newW + "px");
+    };
+
+    const onUp = () => {
+      resizeHandle.classList.remove("dragging");
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+      const w = getComputedStyle(document.documentElement).getPropertyValue("--sidebar-w").trim();
+      localStorage.setItem(WIDTH_KEY, w);
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+    };
+
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+  });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   if (window.lucide) lucide.createIcons();
   initDashboard();
+  initSidebar();
 });

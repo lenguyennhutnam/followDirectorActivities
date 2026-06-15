@@ -165,10 +165,6 @@
         const mode = card.getAttribute("data-mode");
         if (!mode) return;
         setAiScanModeValue(mode);
-        saveAiScanModeImmediate(mode).catch((e) => {
-          alert(e?.message || String(e));
-          loadSettings().catch(() => {});
-        });
         if (window.lucide) lucide.createIcons();
       });
     });
@@ -349,6 +345,11 @@
       );
     }
     document.getElementById("setFilterChinhThong").checked = !!s.filter_chinh_thong_only;
+    const smEl = document.getElementById("setSearchMatchMode");
+    if (smEl) {
+      const valid = ["related", "related_position", "exact_name", "exact_position", "exact"];
+      smEl.value = valid.includes(s.search_match_mode) ? s.search_match_mode : "related";
+    }
     document.getElementById("setMaxResults").value = String(s.max_results_per_target ?? 15);
     const rssEl = document.getElementById("setUseRss");
     if (rssEl) rssEl.checked = s.use_rss_feeds !== false;
@@ -457,6 +458,7 @@
     const body = {
       ai_scan_mode: getSelectedAiScanMode(),
       filter_chinh_thong_only: document.getElementById("setFilterChinhThong").checked,
+      search_match_mode: document.getElementById("setSearchMatchMode")?.value || "related",
       max_results_per_target: Number(document.getElementById("setMaxResults").value) || 15,
       use_rss_feeds: document.getElementById("setUseRss")?.checked !== false,
       auto_scan_enabled: document.getElementById("setAutoScan")?.checked !== false,
