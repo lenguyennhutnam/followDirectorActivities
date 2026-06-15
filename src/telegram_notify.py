@@ -70,9 +70,29 @@ def is_notify_empty_enabled(cfg: Dict[str, Any]) -> bool:
     return as_bool(tg.get("notify_on_empty"), False)
 
 
+def _published_raw(row: Dict[str, Any]) -> Any:
+    return (
+        row.get("published")
+        or row.get("published date")
+        or row.get("published_at")
+        or row.get("publishedAt")
+        or row.get("date")
+    )
+
+
 def _rows_in_window(
-    rows: List[Dict[str, Any]], target_name: str, cutoff: datetime
+    rows: List[Dict[str, Any]],
+    target_name: str,
+    cutoff: datetime,
+    *,
+    pub_earliest: Optional[datetime] = None,
+    pub_latest: Optional[datetime] = None,
 ) -> List[Dict[str, Any]]:
+    """Lọc theo thời điểm quét (cutoff) + theo NGÀY ĐĂNG thực (pub_*) nếu truyền.
+
+    Bài có ngày đăng ngoài cửa sổ (quá cũ hoặc tương lai bất thường) → loại.
+    Bài không đọc được ngày đăng → giữ. parse_ts trả UTC nên pub_* phải tính theo UTC.
+    """
     name = str(target_name or "").strip()
     out: List[Dict[str, Any]] = []
     for row in rows:
@@ -81,8 +101,13 @@ def _rows_in_window(
         if str(row.get("target_name", "")).strip() != name:
             continue
         ts = parse_ts(row.get("timestamp"))
-        if ts is None or ts >= cutoff:
-            out.append(row)
+        if ts is not None and ts < cutoff:
+            continue
+        if pub_earliest is not None:
+            pts = parse_ts(_published_raw(row))
+            if pts is not None and not (pub_earliest <= pts <= pub_latest):
+                continue
+        out.append(row)
     return out
 
 
@@ -305,14 +330,11 @@ def format_target_digest(
     """Tin Telegram: tiêu đề, link, thời gian; bài về chức vụ in đậm cả khối."""
     name = _escape_html(target_name) if html_mode else target_name
     lines = [f"{index}. Đồng chí {name}:"]
-    lines.append(f"- Thay đổi chức vụ: {'Có' if role_change else 'Không'}")
 
     role_list = list(role_rows or [])
     role_urls = {article_link_url(r) for r in role_list if article_link_url(r)}
     merged = _merge_article_rows(activity_rows, role_list)
 
-    h = int(hours) if hours == int(hours) else hours
-    lines.append(f"- Hoạt động trong {h} giờ:")
     if not merged:
         lines.append("\t(không có)")
     else:
@@ -461,6 +483,10 @@ def notify_records(
         channel_bd = []
 
     cutoff = datetime.now() - timedelta(hours=max(0.1, float(hours)))
+    # Cửa sổ NGÀY ĐĂNG tính theo UTC (parse_ts trả UTC); buffer 6h bù lệch múi giờ/độ trễ.
+    _pub_buffer = 6.0
+    pub_earliest = datetime.utcnow() - timedelta(hours=max(0.1, float(hours)) + _pub_buffer)
+    pub_latest = datetime.utcnow() + timedelta(hours=_pub_buffer)
     grouped = _group_new_by_target(new_records)
 
     targets_order: List[str] = []
@@ -488,8 +514,24 @@ def notify_records(
     empty_blocks: List[Tuple[int, str]] = []
 
     for idx, target_name in enumerate(targets_order, start=1):
-        rows_hd = _dedupe_rows_by_url(_rows_in_window(channel_hd, target_name, cutoff))
-        rows_bd = _dedupe_rows_by_url(_rows_in_window(channel_bd, target_name, cutoff))
+        rows_hd = _dedupe_rows_by_url(
+            _rows_in_window(
+                channel_hd,
+                target_name,
+                cutoff,
+                pub_earliest=pub_earliest,
+                pub_latest=pub_latest,
+            )
+        )
+        rows_bd = _dedupe_rows_by_url(
+            _rows_in_window(
+                channel_bd,
+                target_name,
+                cutoff,
+                pub_earliest=pub_earliest,
+                pub_latest=pub_latest,
+            )
+        )
         role_change = len(rows_bd) > 0
 
         batch = grouped.get(target_name, [])
@@ -497,7 +539,7 @@ def notify_records(
         has_content = role_change or len(rows_hd) > 0
         empty_key = empty_status_key(target_name)
 
-        if pending:
+        if pending and has_content:
             if role_only:
                 pending_change = any(
                     isinstance(r.get("ai_result"), dict)

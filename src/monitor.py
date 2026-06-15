@@ -162,6 +162,39 @@ ROLE_QUERY_SUFFIX = (
     "(bổ nhiệm OR miễn nhiệm OR giữ chức OR phân công OR tân nhiệm OR quyết định)"
 )
 
+SEARCH_MATCH_MODES = ("related", "related_position", "exact_name", "exact_position", "exact")
+
+
+def normalize_search_match_mode(value: Any) -> str:
+    m = str(value or "related").strip().lower()
+    return m if m in SEARCH_MATCH_MODES else "related"
+
+
+def compose_target_query(name: str, position: str, match_mode: str) -> str:
+    """
+    Tạo truy vấn Google News.
+    - related:          Tên             — chỉ tên, không ngoặc kép
+    - related_position: Chức vụ         — chỉ chức vụ, không ngoặc kép
+    - exact_name:       "Tên"           — chỉ tên, có ngoặc kép
+    - exact_position:   "Chức vụ"       — chỉ chức vụ, có ngoặc kép
+    - exact:            "Tên" "Chức vụ" — cả hai cụm, có ngoặc kép
+    """
+    nm = str(name or "").strip()
+    pos = str(position or "").strip()
+    mode = normalize_search_match_mode(match_mode)
+
+    if mode == "related_position":
+        return pos if pos else nm
+    if mode == "exact_name":
+        return _quote_gnews_term(nm)
+    if mode == "exact_position":
+        return _quote_gnews_term(pos) if pos else _quote_gnews_term(nm)
+    if mode == "exact":
+        nq = _quote_gnews_term(nm)
+        return f"{nq} {_quote_gnews_term(pos)}" if pos else nq
+    # related (default): chỉ tên, không ngoặc kép
+    return nm
+
 _ROLE_CHANGE_STRONG = re.compile(
     r"bổ\s*nhiệm|miễn\s*nhiệm|bãi\s*nhiệm|điều\s*động|bổ\s*nhiệm\s+giữ\s+chức|"
     r"luân\s+chuyển|thay\s+thế|bổ\s+nhiệm\s+lại|giữ\s+chức\s+vụ|được\s+giao\s+giữ",
@@ -745,7 +778,9 @@ def _google_news_search_by_domains(
     per = max(3, (max_results + len(doms) - 1) // len(doms))
     merged: List[Dict[str, Any]] = []
     seen: Set[str] = set()
-    term = _quote_gnews_term(base)
+    # base đã được người gọi tự đặt ngoặc kép (compose_target_query) — không bọc lại
+    # để tránh ép cụm sai (vd. "Tên Chức vụ" thành một cụm cố định).
+    term = base
 
     for dom in doms:
         q = f"{term} site:{dom}"
@@ -999,6 +1034,94 @@ def is_confirmed_role_change(ai_result: Dict[str, Any]) -> bool:
     return bool(from_p or to_p or decision)
 
 
+_ARTICLE_DATE_KEYS = (
+    "published date",
+    "published_at",
+    "publishedAt",
+    "date",
+    "published",
+)
+
+
+def _article_published_raw(art: Dict[str, Any]) -> Any:
+    for k in _ARTICLE_DATE_KEYS:
+        v = art.get(k)
+        if v:
+            return v
+    return None
+
+
+def _published_within_window(
+    art: Dict[str, Any], window_hours: float, *, buffer_hours: float = 6.0
+) -> bool:
+    """
+    Lọc bài sai/cũ thời gian:
+    - Ngoài cửa sổ giờ (quá cũ hoặc thời gian tương lai bất thường) → loại (False).
+    - Không đọc được ngày đăng → GIỮ lại (True) để tránh mất tin thật.
+    parse_ts trả datetime UTC (naive) → so với datetime.utcnow() cho khớp múi giờ.
+    buffer_hours bù lệch múi giờ và độ trễ hiển thị của Google.
+    """
+    ts = parse_ts(_article_published_raw(art))
+    if ts is None:
+        return True
+    now = datetime.utcnow()
+    earliest = now - timedelta(hours=float(window_hours) + float(buffer_hours))
+    latest = now + timedelta(hours=float(buffer_hours))
+    return earliest <= ts <= latest
+
+
+# Domain tài liệu lưu trữ/sách — không phải tin tức, luôn loại bỏ.
+_DEFAULT_EXCLUDE_DOMAINS = {"tulieuvankien.dangcongsan.vn"}
+
+
+
+def resolve_exclude_domains(gn: Optional[Dict[str, Any]] = None) -> Set[str]:
+    """Danh sách domain bị loại (mặc định + cấu hình)."""
+    out = set(_DEFAULT_EXCLUDE_DOMAINS)
+    extra = (gn or {}).get("exclude_domains")
+    if isinstance(extra, list):
+        for d in extra:
+            dom = _norm_domain(str(d))
+            if dom:
+                out.add(dom)
+    return out
+
+
+def _domain_excluded(url: str, exclude: Set[str]) -> bool:
+    if not exclude:
+        return False
+    try:
+        host = _norm_domain(urlparse(str(url or "")).netloc)
+    except Exception:
+        return False
+    if not host:
+        return False
+    return any(host == d or host.endswith("." + d) for d in exclude)
+
+
+def _name_appears_capitalized(name: str, title: str, description: str) -> bool:
+    """True nếu tên xuất hiện đúng chữ hoa (phân biệt hoa/thường) trong tiêu đề hoặc mô tả."""
+    nm = str(name or "").strip()
+    if not nm:
+        return False
+    blob = f"{title or ''} {description or ''}"
+    return bool(re.search(r"(?<!\w)" + re.escape(nm) + r"(?!\w)", blob))
+
+
+def _name_false_positive_only(name: str, title: str, description: str) -> bool:
+    """
+    True nếu tên chỉ xuất hiện dạng chữ thường (từ ghép, vd. 'trung đoàn anh dũng').
+    Nếu tên xuất hiện đúng chữ hoa (vd. 'Đoàn Anh Dũng') → bài đang nói về người này → False.
+    """
+    nm = str(name or "").strip()
+    if not nm or " " not in nm:
+        return False
+    if _name_appears_capitalized(nm, title, description):
+        return False
+    blob = f"{title or ''} {description or ''}".lower()
+    return bool(re.search(re.escape(nm.lower()), blob))
+
+
 def _collect_articles_for_target(
     target: Target,
     *,
@@ -1010,12 +1133,15 @@ def _collect_articles_for_target(
     rss_max_per_feed: int = 40,
     scan_role_change: bool = True,
     filter_press: bool = False,
+    match_mode: str = "related",
+    window_hours: float = 0.0,
+    exclude_domains: Optional[Set[str]] = None,
 ) -> List[Tuple[Dict[str, Any], str]]:
     """GNews + RSS; trùng URL ưu tiên biendong (bỏ hoatdong trùng)."""
     pairs: List[Tuple[Dict[str, Any], str]] = []
 
-    q_hd = str(target.name).strip()
-    q_bd = f"{target.name} {ROLE_QUERY_SUFFIX}".strip()
+    q_hd = compose_target_query(target.name, target.position, match_mode)
+    q_bd = f"{_quote_gnews_term(str(target.name).strip())} {ROLE_QUERY_SUFFIX}".strip()
 
     scan_kinds: List[Tuple[str, str]] = [(q_hd, "hoatdong")]
     if scan_role_change:
@@ -1064,6 +1190,49 @@ def _collect_articles_for_target(
     skipped_hd = len(pairs) - len(merged)
     if skipped_hd > 0:
         print(f"  [DEDUP] bỏ {skipped_hd} bài trùng (ưu tiên biến động chức vụ)")
+
+    excl = exclude_domains if exclude_domains is not None else _DEFAULT_EXCLUDE_DOMAINS
+    if excl:
+        before = len(merged)
+        merged = [
+            (art, kind)
+            for art, kind in merged
+            if not _domain_excluded(
+                str(art.get("resolved_url") or art.get("url") or ""), excl
+            )
+        ]
+        dropped = before - len(merged)
+        if dropped > 0:
+            print(f"  [EXCLUDE] bỏ {dropped} bài từ domain bị loại (tài liệu/lưu trữ)")
+
+    before = len(merged)
+    merged = [
+        (art, kind)
+        for art, kind in merged
+        if not _name_false_positive_only(
+            target.name, art.get("title"), art.get("description")
+        )
+    ]
+    dropped_name = before - len(merged)
+    if dropped_name > 0:
+        print(
+            f"  [NAME] bỏ {dropped_name} bài dính tên trong từ ghép "
+            f"(vd. «trung đoàn …» với tên «{target.name}»)"
+        )
+
+    if window_hours and window_hours > 0:
+        before = len(merged)
+        merged = [
+            (art, kind)
+            for art, kind in merged
+            if _published_within_window(art, window_hours)
+        ]
+        dropped = before - len(merged)
+        if dropped > 0:
+            print(
+                f"  [TIME] bỏ {dropped} bài ngoài cửa sổ ~{int(window_hours)}h "
+                f"(quá cũ hoặc sai thời gian); giữ bài không rõ ngày đăng"
+            )
     return merged
 
 
@@ -1079,8 +1248,10 @@ def _apply_decode_and_whitelist(
     decode_workers: int = 4,
     decode_interval: float = 0.15,
     ignore_saved: bool = False,
+    exclude_domains: Optional[Set[str]] = None,
 ) -> Tuple[List[Tuple[Dict[str, Any], str]], int, int]:
     """Lọc history trước decode; chỉ decode URL Google News còn lại."""
+    excl = exclude_domains if exclude_domains is not None else _DEFAULT_EXCLUDE_DOMAINS
     pending: List[Tuple[Dict[str, Any], str]] = []
     skipped_history = 0
 
@@ -1109,6 +1280,7 @@ def _apply_decode_and_whitelist(
     kept: List[Tuple[Dict[str, Any], str]] = []
     skipped_whitelist = 0
     skipped_no_resolve = 0
+    skipped_excluded = 0
     rejected_domains: Dict[str, int] = {}
     for art, kind in pending:
         url = str(art.get("url") or "").strip()
@@ -1117,6 +1289,9 @@ def _apply_decode_and_whitelist(
             resolved = pre_resolved
         else:
             resolved = decoded.get(url) or (url if not is_google_news_url(url) else "")
+        if resolved and _domain_excluded(resolved, excl):
+            skipped_excluded += 1
+            continue
         pub_href = _gnews_publisher_href(art)
         if filter_press and not resolved and pub_href.startswith("http"):
             if whitelist.is_allowed_url(pub_href):
@@ -1156,6 +1331,8 @@ def _apply_decode_and_whitelist(
             )
     if skipped_no_resolve:
         print(f"  [FILTER] bỏ {skipped_no_resolve} bài chưa decode được link báo")
+    if skipped_excluded:
+        print(f"  [EXCLUDE] bỏ {skipped_excluded} bài từ domain bị loại (tài liệu/lưu trữ)")
     return kept, skipped_history, skipped_whitelist
 
 
@@ -1194,17 +1371,25 @@ def _process_gemini_batch(
                 msg = str(exc)
                 print(f"  [AI] worker error: {msg}")
                 errors.append(msg)
-        return out, errors
+    else:
+        with ThreadPoolExecutor(max_workers=w) as pool:
+            futures = [pool.submit(_one, item) for item in pending]
+            for fut in as_completed(futures):
+                try:
+                    out.append(fut.result())
+                except Exception as exc:
+                    msg = str(exc)
+                    print(f"  [AI] worker error: {msg}")
+                    errors.append(msg)
 
-    with ThreadPoolExecutor(max_workers=w) as pool:
-        futures = [pool.submit(_one, item) for item in pending]
-        for fut in as_completed(futures):
-            try:
-                out.append(fut.result())
-            except Exception as exc:
-                msg = str(exc)
-                print(f"  [AI] worker error: {msg}")
-                errors.append(msg)
+    # Collect errors returned inside AI result dicts (e.g. 429 quota, 403 key invalid)
+    seen_gerrs: set = set()
+    for _, _, ai_result in out:
+        gerr = str(ai_result.get("Gemini_Error") or "").strip()
+        if gerr and gerr not in seen_gerrs:
+            seen_gerrs.add(gerr)
+            errors.append(gerr)
+
     return out, errors
 
 
@@ -1212,7 +1397,9 @@ def process_once(
     *,
     scan_hours: Optional[float] = None,
     target_name: Optional[str] = None,
+    target_names: Optional[List[str]] = None,
     ignore_history: bool = False,
+    cancel_fn: Optional[Any] = None,
 ) -> Dict[str, Any]:
     """Mỗi lượt quét đọc lại config.json — chế độ AI theo ai_scan_mode người dùng đã chọn."""
     cfg = load_config()
@@ -1256,6 +1443,13 @@ def process_once(
     language = str(gn.get("language") or "vi")
     country = str(gn.get("country") or "VN")
     max_results = int(gn.get("max_results_per_target") or 15)
+    match_mode = normalize_search_match_mode(gn.get("search_match_mode"))
+    exclude_domains = resolve_exclude_domains(gn)
+    window_hours = resolve_activity_report_hours(
+        float(scan_hours) if scan_hours is not None else 0.0, gn
+    )
+    mode_label = "chính xác (tên + chức vụ)" if match_mode == "exact" else "liên quan (ưu tiên tên)"
+    print(f"[SCAN] Cách tìm: {mode_label} · cửa sổ thời gian ~{int(window_hours)}h")
 
     targets: List[Target] = []
     for t in cfg.get("targets") or []:
@@ -1266,10 +1460,15 @@ def process_once(
             targets.append(Target(name=name, position=str(t.get("position", ""))))
 
     filter_name = str(target_name or "").strip()
+    filter_names = [str(n).strip() for n in (target_names or []) if str(n).strip()]
     if filter_name:
         targets = [t for t in targets if t.name == filter_name]
         if not targets:
             raise ValueError(f'Không tìm thấy đối tượng "{filter_name}" trong cấu hình')
+    elif filter_names:
+        targets = [t for t in targets if t.name in filter_names]
+        if not targets:
+            raise ValueError(f'Không tìm thấy đối tượng nào trong danh sách đã chọn')
 
     perf = _scan_perf_options(gn)
     filter_press = is_chinh_thong_filter_enabled(cfg)
@@ -1293,7 +1492,12 @@ def process_once(
     skipped_whitelist_total = 0
     ai_errors: List[str] = []
 
+    cancelled = False
     for ti, target in enumerate(targets, start=1):
+        if cancel_fn is not None and cancel_fn():
+            print(f"[SCAN] Hủy quét theo yêu cầu — đã xong {ti - 1}/{len(targets)} đối tượng", flush=True)
+            cancelled = True
+            break
         print(f"[SCAN] ({ti}/{len(targets)}) {target.name}")
         sys.stdout.flush()
         raw_pairs = _collect_articles_for_target(
@@ -1306,6 +1510,9 @@ def process_once(
             rss_max_per_feed=perf["rss_max_per_feed"],
             scan_role_change=scan_role_change,
             filter_press=filter_press,
+            match_mode=match_mode,
+            window_hours=window_hours,
+            exclude_domains=exclude_domains,
         )
         pairs, skipped_hist, skipped_wl = _apply_decode_and_whitelist(
             raw_pairs,
@@ -1318,6 +1525,7 @@ def process_once(
             decode_workers=perf["decode_workers"],
             decode_interval=perf["decode_interval"],
             ignore_saved=ignore_history,
+            exclude_domains=exclude_domains,
         )
         skipped_history_dup += skipped_hist
         skipped_pre_decode += skipped_hist
@@ -1443,6 +1651,7 @@ def process_once(
 
     return {
         "success": True,
+        "cancelled": cancelled,
         "processed_new": saved_count,
         "processed": scan_results,
         "history_size": len(history_set),

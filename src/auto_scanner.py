@@ -6,7 +6,7 @@ import sys
 import threading
 import time
 from datetime import datetime, timedelta
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from src.common import as_bool
 from src.monitor import load_config, process_once
@@ -19,12 +19,14 @@ class AutoScanner:
         self._lock = threading.Lock()
         self._stop = threading.Event()
         self._config_wake = threading.Event()
+        self._cancel = threading.Event()
         self._thread: Optional[threading.Thread] = None
         self._started = False
         self._state: Dict[str, Any] = {
             "enabled": False,
             "interval_minutes": 60,
             "is_scanning": False,
+            "cancel_requested": False,
             "last_scan_at": None,
             "last_scan_source": None,
             "last_scan_ok": None,
@@ -42,7 +44,17 @@ class AutoScanner:
     def get_status(self) -> Dict[str, Any]:
         st = dict(self._state)
         st["thread_alive"] = bool(self._thread and self._thread.is_alive())
+        st["cancel_requested"] = self._cancel.is_set()
         return st
+
+    def request_cancel(self) -> bool:
+        """Yêu cầu dừng lượt quét hiện tại — dừng giữa các đối tượng, không ngắt giữa Gemini call."""
+        if not self._state.get("is_scanning"):
+            return False
+        self._cancel.set()
+        self._state["cancel_requested"] = True
+        print("[SCAN] Yêu cầu hủy quét — sẽ dừng sau khi đối tượng hiện tại xong", flush=True)
+        return True
 
     def _sync_ai_mode_state(self) -> None:
         from src.monitor import resolve_ai_scan_options
@@ -144,17 +156,20 @@ class AutoScanner:
 
     def _loop(self) -> None:
         time.sleep(3)
+        skip_next_scan = False  # True khi bị đánh thức bởi config change (không scan ngay)
         while not self._stop.is_set():
             cycle_start = time.time()
             enabled, interval, hours = self._read_schedule()
             self._state["enabled"] = enabled
             self._state["interval_minutes"] = interval
 
-            if enabled:
+            if enabled and not skip_next_scan:
                 try:
                     self._run_scan(hours=hours, source="auto", blocking=False)
                 except Exception as exc:
                     print(f"[AUTO] scan failed (retry next cycle): {exc}")
+
+            skip_next_scan = False
 
             enabled, interval, hours = self._read_schedule()
             self._state["enabled"] = enabled
@@ -164,7 +179,9 @@ class AutoScanner:
                 break
 
             if self._wait_until_next_cycle(cycle_start, interval):
+                # Bị đánh thức do config thay đổi → chỉ re-apply config, không scan ngay
                 self._sync_ai_mode_state()
+                skip_next_scan = True
                 continue
 
     def _run_scan(
@@ -174,6 +191,7 @@ class AutoScanner:
         source: str,
         blocking: bool,
         target_name: Optional[str] = None,
+        target_names: Optional[List[str]] = None,
         ignore_history: bool = False,
     ) -> Optional[Dict[str, Any]]:
         acquired = self._lock.acquire(blocking=blocking)
@@ -182,18 +200,24 @@ class AutoScanner:
             return None
 
         try:
+            self._cancel.clear()
             self._state["is_scanning"] = True
+            self._state["cancel_requested"] = False
             self._state["last_scan_source"] = source
             label = f"[SCAN] === Bắt đầu lượt quét ({source}) ==="
             if target_name:
                 label += f" · đối tượng: {target_name}"
+            elif target_names:
+                label += f" · {len(target_names)} đối tượng được chọn"
             print(label, flush=True)
 
             self._sync_ai_mode_state()
             result = process_once(
                 scan_hours=hours,
                 target_name=target_name,
+                target_names=target_names,
                 ignore_history=ignore_history,
+                cancel_fn=self._cancel.is_set,
             )
             now = datetime.now().isoformat(timespec="seconds")
 
@@ -202,16 +226,22 @@ class AutoScanner:
             warning = None
             scan_ok = True
             if ai_errs:
-                warning = ai_errs[0]
-                if len(ai_errs) > 1:
-                    warning += f" (+{len(ai_errs) - 1} lỗi AI khác)"
-                low = warning.lower()
-                if "leaked" in low or "403" in low or "api key" in low:
+                combined_low = " ".join(ai_errs).lower()
+                if "429" in combined_low or "quota" in combined_low or "resource_exhausted" in combined_low:
+                    warning = (
+                        f"Gemini API đã hết quota ({ai_count} bài không phân tích được). "
+                        "Quét lại sau khi quota reset — thường sau vài giờ hoặc hôm sau."
+                    )
+                elif "leaked" in combined_low or "403" in combined_low or "api key" in combined_low:
                     scan_ok = False
                     warning = (
                         "Gemini API key không hợp lệ hoặc đã bị Google vô hiệu hóa. "
                         "Tạo key mới tại Google AI Studio và cập nhật config.json."
                     )
+                else:
+                    warning = ai_errs[0]
+                    if len(ai_errs) > 1:
+                        warning += f" (+{len(ai_errs) - 1} lỗi AI khác)"
 
             self._state["is_scanning"] = False
             self._state["last_scan_at"] = result.get("timestamp") or now
@@ -287,6 +317,7 @@ class AutoScanner:
         scan_hours: Optional[float] = None,
         source: str = "manual",
         target_name: Optional[str] = None,
+        target_names: Optional[List[str]] = None,
         ignore_history: Optional[bool] = None,
     ) -> Dict[str, Any]:
         if scan_hours is None:
@@ -298,6 +329,7 @@ class AutoScanner:
             source=source,
             blocking=True,
             target_name=target_name,
+            target_names=target_names,
             ignore_history=bool(ignore_history),
         )
         if out is None:

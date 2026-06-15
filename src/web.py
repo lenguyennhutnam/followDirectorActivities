@@ -333,6 +333,9 @@ def api_get_settings():
                     if k in monitor.AI_SCAN_UI_MODES
                 ],
                 "max_results_per_target": int(gn.get("max_results_per_target") or 15),
+                "search_match_mode": monitor.normalize_search_match_mode(
+                    gn.get("search_match_mode")
+                ),
                 "use_rss_feeds": as_bool(gn.get("use_rss_feeds"), True),
                 "auto_scan_enabled": as_bool(cfg.get("auto_scan_enabled"), True),
                 "scan_interval_minutes": max(
@@ -412,6 +415,10 @@ def api_save_settings():
             gn["max_results_per_target"] = max(1, min(50, n))
         except (TypeError, ValueError):
             pass
+    if "search_match_mode" in data:
+        gn["search_match_mode"] = monitor.normalize_search_match_mode(
+            data.get("search_match_mode")
+        )
     if "use_rss_feeds" in data:
         gn["use_rss_feeds"] = as_bool(data.get("use_rss_feeds"), True)
     if "auto_scan_enabled" in data:
@@ -485,7 +492,8 @@ def api_save_settings():
     write_json(CONFIG_PATH, cfg)
     ai_opts = monitor.resolve_ai_scan_options(cfg)
     rescan_started = False
-    if ai_mode_saved:
+    allow_rescan = as_bool(data.get("trigger_scan"), True)
+    if ai_mode_saved and allow_rescan:
         _AUTO_SCANNER.wake_reconfig(scan_soon=False)
         rescan_started = _AUTO_SCANNER.request_rescan_for_mode_change()
     else:
@@ -614,6 +622,15 @@ def api_data_clear():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
+@app.post("/monitor/cancel")
+def monitor_cancel():
+    """Hủy lượt quét đang chạy — dừng sau khi đối tượng hiện tại xong."""
+    cancelled = _AUTO_SCANNER.request_cancel()
+    if not cancelled:
+        return jsonify({"success": False, "error": "Không có lượt quét nào đang chạy"}), 409
+    return jsonify({"success": True, "message": "Đã gửi yêu cầu hủy quét"})
+
+
 @app.get("/api/monitor/status")
 def api_monitor_status():
     _AUTO_SCANNER.ensure_running()
@@ -634,12 +651,14 @@ def monitor_run():
             except (TypeError, ValueError):
                 hours = None
         target_name = str(body.get("target_name") or "").strip() or None
+        _raw_names = body.get("target_names")
+        target_names = [str(n).strip() for n in (_raw_names or []) if str(n).strip()] or None
         ignore_history = True
         if body.get("ignore_history") is not None:
             ignore_history = as_bool(body.get("ignore_history"), True)
         st = _AUTO_SCANNER.get_status()
         if st.get("is_scanning"):
-            who = target_name or "tất cả đối tượng"
+            who = target_name or (f"{len(target_names)} đối tượng" if target_names else "tất cả đối tượng")
             print(
                 f"[MANUAL] Từ chối quét ({who}) — đang có lượt quét khác",
                 flush=True,
@@ -652,7 +671,7 @@ def monitor_run():
                 }
             ), 409
 
-        who = target_name or "tất cả đối tượng"
+        who = target_name or (f"{len(target_names)} đối tượng" if target_names else "tất cả đối tượng")
         print(f"[MANUAL] Yêu cầu quét ({who}) — bắt đầu…", flush=True)
 
         def _manual_scan() -> None:
@@ -661,6 +680,7 @@ def monitor_run():
                     scan_hours=hours,
                     source="manual",
                     target_name=target_name,
+                    target_names=target_names,
                     ignore_history=ignore_history,
                 )
                 if out is None and _AUTO_SCANNER.get_status().get("is_scanning"):
