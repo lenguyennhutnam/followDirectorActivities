@@ -249,6 +249,32 @@ def api_targets_summary():
     })
 
 
+@app.post("/api/target/label")
+def api_label_articles():
+    """Gán/xoá user_label cho các bài báo theo URL."""
+    data = request.get_json(force=True) or {}
+    urls: list = data.get("urls") or []
+    label: str = str(data.get("label") or "").strip()  # "irrelevant" hoặc "" để xoá
+    if not urls:
+        return jsonify({"success": False, "error": "Thiếu urls"}), 400
+
+    url_set = set(str(u) for u in urls)
+    notifs = monitor.load_notifications()
+    count = 0
+    for channel in ("channel_hoatdong", "channel_biendong"):
+        for item in notifs.get(channel, []):
+            if not isinstance(item, dict):
+                continue
+            if item.get("url") in url_set or item.get("resolved_url") in url_set:
+                if label:
+                    item["user_label"] = label
+                else:
+                    item.pop("user_label", None)
+                count += 1
+    monitor.save_notifications(notifs)
+    return jsonify({"success": True, "labeled": count})
+
+
 @app.get("/api/target/detail")
 def api_target_detail():
     name = str(request.args.get("name", "") or "").strip()

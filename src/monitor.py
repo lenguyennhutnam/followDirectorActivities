@@ -1863,10 +1863,15 @@ def collect_target_detail(
     name, hrs_act, hrs_role, rows_hd, rows_bd = _target_window_rows(
         notifs, target_name, since_hours, gn=gn
     )
-    summary = _build_target_summary(name, hrs_act, hrs_role, rows_hd, rows_bd, since_hours)
+
+    # Tách relevant vs irrelevant dựa trên user_label
+    rows_hd_rel = [r for r in rows_hd if r.get("user_label") != "irrelevant"]
+    rows_hd_irrel = [r for r in rows_hd if r.get("user_label") == "irrelevant"]
+
+    summary = _build_target_summary(name, hrs_act, hrs_role, rows_hd_rel, rows_bd, since_hours)
     report_lines = [summary.get("digest_text", ""), ""]
     report_lines.append(f"=== Tin hoạt động ({hrs_act}h) ===")
-    for r in reversed(rows_hd):
+    for r in reversed(rows_hd_rel):
         report_lines.append(f"- {r.get('title', '')} | {article_link_url(r)}")
     report_lines.append("")
     report_lines.append(f"=== Tin chức vụ ({hrs_role}h) ===")
@@ -1879,7 +1884,8 @@ def collect_target_detail(
         "role_hours": hrs_role,
         "summary": summary,
         "report_text": "\n".join(report_lines).strip(),
-        "records_hoatdong": [enrich_record_for_api(r) for r in reversed(rows_hd)],
+        "records_hoatdong": [enrich_record_for_api(r) for r in reversed(rows_hd_rel)],
+        "records_hoatdong_irrelevant": [enrich_record_for_api(r) for r in reversed(rows_hd_irrel)],
         "records_biendong": [enrich_record_for_api(r) for r in reversed(rows_bd)],
     }
 

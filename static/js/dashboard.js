@@ -457,6 +457,11 @@ function renderSummaries(summaries) {
 
     card.querySelector(".card-inner")?.addEventListener("click", (e) => {
       if (e.target.closest("a, button, .card-check-wrap")) return;
+      if (e.target.closest("h3")) {
+        const cb = card.querySelector(".t-check");
+        if (cb) cb.checked = !cb.checked;
+        return;
+      }
       location.href = href;
     });
 

@@ -90,7 +90,11 @@
   font-weight: 700;
   letter-spacing: -0.02em;
   line-height: 1.35;
+  cursor: pointer;
+  user-select: none;
 }
+
+.card-title-area h3:hover { color: var(--accent); }
 
 .card-sub-pos {
   margin: 4px 0 0;
@@ -802,13 +806,15 @@ html[data-theme="light"] .inp-select {
   padding: 20px 20px 48px;
 }
 
+.detail-hero-block { margin-bottom: 16px; }
+
 .detail-hero {
-  margin-bottom: 22px;
   display: flex;
   flex-wrap: wrap;
   gap: 16px;
   align-items: flex-start;
   justify-content: space-between;
+  padding: 20px 22px;
 }
 
 .detail-hero h1 {
@@ -1071,4 +1077,124 @@ details.raw pre {
   border: 2px solid var(--line-2);
   border-top-color: var(--accent);
   animation: spin 0.7s linear infinite;
+}
+
+/* —— Feed tabs (Tin liên quan / Tin không liên quan) —— */
+.feed-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 8px 16px 0;
+  border-bottom: 1px solid var(--line);
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent);
+}
+
+.feed-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+  background: none;
+  border: 1px solid transparent;
+  border-bottom: none;
+  border-radius: var(--r-sm) var(--r-sm) 0 0;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
+  position: relative;
+  bottom: -1px;
+}
+
+.feed-tab:hover { color: var(--text); background: rgba(255,255,255,0.04); }
+
+.feed-tab.is-active {
+  color: var(--accent);
+  background: var(--glass);
+  border-color: var(--line);
+  border-bottom-color: var(--glass);
+}
+
+.feed-tab-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  font-size: 0.65rem;
+  font-family: var(--mono);
+  font-weight: 700;
+  background: var(--accent-dim);
+  color: var(--accent);
+}
+
+.feed-tab-badge--dim {
+  background: rgba(148, 163, 184, 0.1);
+  color: var(--muted);
+}
+
+/* —— Action bar —— */
+.feed-action-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: rgba(56, 189, 248, 0.06);
+  border-bottom: 1px solid rgba(56, 189, 248, 0.15);
+}
+
+.feed-action-count {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--accent);
+  font-family: var(--mono);
+}
+
+/* —— Scrollable feed —— */
+.feed-scrollable {
+  max-height: 520px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  padding-right: 2px;
+}
+
+/* —— Record checkbox —— */
+.record { position: relative; cursor: pointer; }
+
+.record-cb-wrap {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.record-cb {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+/* —— Dimmed (irrelevant) articles —— */
+.record--dimmed {
+  opacity: 0.6;
+  border-left-color: var(--muted-2);
+}
+
+.record--dimmed:hover { opacity: 0.85; }
+
+html[data-theme="light"] .feed-tab.is-active {
+  border-bottom-color: #ffffff;
+  background: #ffffff;
+}
+
+html[data-theme="light"] .feed-action-bar {
+  background: rgba(37, 99, 235, 0.06);
+  border-bottom-color: rgba(37, 99, 235, 0.2);
 }
