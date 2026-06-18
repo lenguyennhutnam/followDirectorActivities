@@ -22,6 +22,11 @@ _DEFAULT_RSS_BY_DOMAIN: Dict[str, str] = {
     "dantri.com.vn": "https://dantri.com.vn/rss/home.rss",
 }
 
+_RELATED_CUT = re.compile(
+    r"bài viết cùng chuyên mục|xem thêm|tin liên quan|đọc thêm|bài liên quan",
+    re.IGNORECASE,
+)
+
 _ROLE_HINT = re.compile(
     r"bổ nhiệm|miễn nhiệm|bãi nhiệm|phân công|tân nhiệm|quyết định|giữ chức",
     re.IGNORECASE,
@@ -47,10 +52,16 @@ def press_rss_url(row: Dict[str, Any]) -> str:
     return guess_rss_url(str(row.get("homepage_url") or row.get("url") or ""))
 
 
-def _entry_text(entry: Any) -> str:
-    title = str(getattr(entry, "title", "") or "")
-    summary = str(getattr(entry, "summary", "") or getattr(entry, "description", "") or "")
-    return f"{title} {summary}"
+def _entry_matches_target(entry: Any, needle: str) -> bool:
+    title = str(getattr(entry, "title", "") or "").lower()
+    if needle in title:
+        return True
+    raw = str(getattr(entry, "summary", "") or getattr(entry, "description", "") or "")
+    clean = re.sub(r"<[^>]+>", " ", raw)
+    # Cắt tại section bài liên quan để tránh match tên trong sidebar
+    m = _RELATED_CUT.search(clean)
+    body = clean[: m.start()] if m else clean
+    return needle in body.lower()
 
 
 def _entry_link(entry: Any) -> str:
@@ -105,8 +116,7 @@ def fetch_one_feed(
     out: List[Tuple[Dict[str, Any], str]] = []
     entries = getattr(parsed, "entries", None) or []
     for entry in entries[: max(1, max_items)]:
-        text = _entry_text(entry)
-        if needle not in text.lower():
+        if not _entry_matches_target(entry, needle):
             continue
         link = _entry_link(entry)
         if not link.startswith("http"):
@@ -118,7 +128,8 @@ def fetch_one_feed(
         elif getattr(entry, "updated", None):
             published = str(entry.updated)
 
-        kind = _classify_kind(text, role_query_suffix)
+        full_text = f"{title} {str(getattr(entry, 'summary', '') or getattr(entry, 'description', '') or '')}"
+        kind = _classify_kind(full_text, role_query_suffix)
         art = {
             "title": title,
             "description": str(getattr(entry, "summary", "") or "")[:2000],

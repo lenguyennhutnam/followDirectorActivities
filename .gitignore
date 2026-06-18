@@ -9,3 +9,6 @@ venv/
 
 # Dữ liệu runtime (tùy chọn — bỏ comment nếu không muốn commit data)
 # data/
+
+# claude code
+.claude
