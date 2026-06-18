@@ -303,7 +303,7 @@ html[data-theme="light"] .sidebar-search-field {
 
 .t-item {
   display: grid;
-  grid-template-columns: auto auto 1fr auto;
+  grid-template-columns: 1fr auto;
   gap: 10px;
   align-items: center;
   padding: 10px 11px;
@@ -383,6 +383,28 @@ body.scan-in-progress #btnRunNow:disabled {
   border-color: rgba(56, 189, 248, 0.45);
   color: var(--accent);
 }
+
+/* —— Sidebar target actions: hover popup —— */
+.t-ops-more { position: relative; }
+
+.t-ops-popup {
+  display: none;
+  position: absolute;
+  right: calc(100% + 6px);
+  top: 50%;
+  transform: translateY(-50%);
+  flex-direction: row;
+  gap: 3px;
+  background: var(--glass);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-sm);
+  padding: 3px;
+  z-index: 30;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+}
+
+.t-ops-more.is-open .t-ops-popup { display: flex; }
 
 /* —— Sidebar collapse / resize —— */
 .sidebar.collapsed {

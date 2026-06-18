@@ -265,7 +265,7 @@ def _format_article_lines(
     when = _published_label(row)
     inner: List[str] = [f"+ Bài {index}:"]
     if html_mode:
-        inner.append(f"Tiêu đề: {_escape_html(title)}")
+        inner.append(f"Tiêu đề: <b>{_escape_html(title)}</b>")
         if link:
             safe_url = _escape_html_attr(link)
             label = _escape_html(link)

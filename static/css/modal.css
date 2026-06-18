@@ -74,6 +74,15 @@
   flex-shrink: 0;
 }
 
+.cards-select-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 4px 8px;
+}
+
+.card-check-wrap { margin-top: 3px; flex-shrink: 0; }
+
 .card-title-area { flex: 1; min-width: 160px; }
 
 .card-title-area h3 {

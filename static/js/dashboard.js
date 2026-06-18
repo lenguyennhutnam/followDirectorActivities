@@ -303,17 +303,8 @@ function renderTargets(cfg) {
     return;
   }
 
-  const selectAllRow = document.createElement("div");
-  selectAllRow.className = "t-select-all-row";
-  selectAllRow.innerHTML = `
-    <label class="t-check-wrap" title="Chọn/bỏ tất cả">
-      <input type="checkbox" class="t-check-all" checked />
-    </label>
-    <span class="t-select-all-label">Chọn tất cả</span>`;
-  targetsList.appendChild(selectAllRow);
-  selectAllRow.querySelector(".t-check-all").addEventListener("change", (e) => {
-    targetsList.querySelectorAll(".t-check").forEach((cb) => { cb.checked = e.target.checked; });
-  });
+  // [DISABLED] selectAllRow + sidebar checkboxes — moved to center cards
+  // const selectAllRow = document.createElement("div"); ...
   const hours = parseHoursRange();
   targets.forEach((t, idx) => {
     const name = t.name || "";
@@ -328,24 +319,27 @@ function renderTargets(cfg) {
     div.dataset.targetName = name;
     div.dataset.targetPosition = pos;
     div.innerHTML = `
-      <label class="t-check-wrap" title="Bao gồm trong «Quét tất cả»">
-        <input type="checkbox" class="t-check" checked />
-      </label>
-      <div class="avatar">${escapeHtml(initials(name))}</div>
       <div>
         <div class="t-name">${escapeHtml(name)}</div>
         ${pos ? `<div class="t-pos">${escapeHtml(pos)}</div>` : ""}
       </div>
       <div class="t-ops">
-        <button type="button" class="btn btn-glass btn-icon btn-scan-target" data-scan-target="${escapeHtml(name)}" title="Quét riêng đối tượng này (không quét các đối tượng khác)">
-          <i data-lucide="play"></i>
-        </button>
-        <button type="button" class="btn btn-glass btn-icon" data-edit="${idx}" title="Sửa">
-          <i data-lucide="pencil"></i>
-        </button>
-        <a class="btn btn-glass btn-icon" href="${escapeHtml(href)}" title="Xem chi tiết">
-          <i data-lucide="arrow-right"></i>
-        </a>
+        <div class="t-ops-more">
+          <button type="button" class="btn btn-glass btn-icon" title="Thao tác">
+            <i data-lucide="more-horizontal"></i>
+          </button>
+          <div class="t-ops-popup">
+            <button type="button" class="btn btn-glass btn-icon btn-scan-target" data-scan-target="${escapeHtml(name)}" title="Quét riêng">
+              <i data-lucide="play"></i>
+            </button>
+            <button type="button" class="btn btn-glass btn-icon" data-edit="${idx}" title="Sửa">
+              <i data-lucide="pencil"></i>
+            </button>
+            <a class="btn btn-glass btn-icon" href="${escapeHtml(href)}" title="Xem chi tiết">
+              <i data-lucide="arrow-right"></i>
+            </a>
+          </div>
+        </div>
         <button type="button" class="btn btn-danger btn-icon" data-del="${idx}" title="Xóa">
           <i data-lucide="trash-2"></i>
         </button>
@@ -364,6 +358,14 @@ function renderTargets(cfg) {
       if (isScanLocked()) return;
       const name = btn.getAttribute("data-scan-target") || "";
       if (name) runMonitorScan({ targetName: name });
+    });
+  });
+  targetsList.querySelectorAll(".t-ops-more").forEach((more) => {
+    more.querySelector(":scope > button")?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const isOpen = more.classList.contains("is-open");
+      document.querySelectorAll(".t-ops-more.is-open").forEach((el) => el.classList.remove("is-open"));
+      if (!isOpen) more.classList.add("is-open");
     });
   });
   applyScanLockUi();
@@ -389,12 +391,23 @@ function renderTargets(cfg) {
 
 function renderSummaries(summaries) {
   const summariesList = document.getElementById("summariesList");
+  const selectBar = document.getElementById("cardsSelectBar");
+  const checkAll = document.getElementById("checkAllCards");
   summariesList.innerHTML = "";
   if (!summaries?.length) {
     summariesList.innerHTML =
       '<div class="empty" title="Bấm Quét để thu thập tin"><i data-lucide="radio"></i>Chưa có tín hiệu</div>';
+    if (selectBar) selectBar.style.display = "none";
     if (window.lucide) lucide.createIcons();
     return;
+  }
+  if (selectBar) selectBar.style.display = "";
+  if (checkAll) {
+    const newCheckAll = checkAll.cloneNode(true);
+    checkAll.replaceWith(newCheckAll);
+    newCheckAll.addEventListener("change", (e) => {
+      document.querySelectorAll("#summariesList .t-check").forEach((cb) => { cb.checked = e.target.checked; });
+    });
   }
   const hours = parseHoursRange();
   summaries.forEach((s) => {
@@ -418,6 +431,9 @@ function renderSummaries(summaries) {
       <div class="card-glow"></div>
       <div class="card-inner">
         <div class="card-top">
+          <label class="t-check-wrap card-check-wrap" title="Bao gồm trong «Quét tất cả»">
+            <input type="checkbox" class="t-check" checked />
+          </label>
           <div class="card-title-area">
             <h3>${escapeHtml(name)}</h3>
             ${pos ? `<p class="card-sub-pos">${escapeHtml(pos)}</p>` : ""}
@@ -440,7 +456,7 @@ function renderSummaries(summaries) {
       </div>`;
 
     card.querySelector(".card-inner")?.addEventListener("click", (e) => {
-      if (e.target.closest("a, button")) return;
+      if (e.target.closest("a, button, .card-check-wrap")) return;
       location.href = href;
     });
 
@@ -747,9 +763,9 @@ function formatStatusScanMessage(st, targetName) {
 
 function getCheckedTargetNames() {
   const names = [];
-  document.querySelectorAll("#targetsList .t-item").forEach((item) => {
-    const cb = item.querySelector(".t-check");
-    if (cb && cb.checked) names.push(item.dataset.targetName || "");
+  document.querySelectorAll("#summariesList .activity-card").forEach((card) => {
+    const cb = card.querySelector(".t-check");
+    if (cb && cb.checked) names.push(card.dataset.targetName || "");
   });
   return names.filter(Boolean);
 }
@@ -862,6 +878,10 @@ window.refreshDashboardData = refreshDashboardData;
 window.applySettingsSaved = refreshDashboardData;
 
 function initDashboard() {
+  document.addEventListener("click", () => {
+    document.querySelectorAll(".t-ops-more.is-open").forEach((el) => el.classList.remove("is-open"));
+  });
+
   const btnRunNow = document.getElementById("btnRunNow");
   const runSpinner = document.getElementById("runSpinner");
   const btnRefresh = document.getElementById("btnRefresh");
