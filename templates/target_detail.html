@@ -1,10 +1,13 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Chi tiết đối tượng</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <title>Chi tiết mục tiêu bảo vệ</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet" />
   <link rel="stylesheet" href="/static/css/isr-theme.css?v=7" />
   <script>
     (function () {
@@ -12,12 +15,13 @@
         if (localStorage.getItem("ui-theme") === "light") {
           document.documentElement.setAttribute("data-theme", "light");
         }
-      } catch (e) {}
+      } catch (e) { }
     })();
   </script>
   <script src="/static/js/theme.js?v=2"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
 </head>
+
 <body>
   <nav class="detail-nav">
     <div class="detail-nav-in">
@@ -27,22 +31,14 @@
         <a href="#sec-biendong">Chức vụ</a>
       </div>
       <div class="main-actions">
-        <button
-          type="button"
-          class="btn btn-primary btn-sm"
-          id="btnScanTarget"
-          title="Quét riêng đối tượng này (không quét các đối tượng khác)"
-        >
-          <span class="detail-spin" id="scanSpin" style="display:none;width:14px;height:14px;border-width:2px;vertical-align:-2px;margin-right:4px"></span>
+        <button type="button" class="btn btn-primary btn-sm" id="btnScanTarget"
+          title="Quét riêng mục tiêu bảo vệ này (không quét các mục tiêu bảo vệ khác)">
+          <span class="detail-spin" id="scanSpin"
+            style="display:none;width:14px;height:14px;border-width:2px;vertical-align:-2px;margin-right:4px"></span>
           <i data-lucide="play"></i> Quét riêng
         </button>
-        <button
-          type="button"
-          class="btn btn-glass btn-sm theme-toggle-btn"
-          data-theme-toggle
-          aria-pressed="false"
-          title="Chuyển sang giao diện sáng"
-        >
+        <button type="button" class="btn btn-glass btn-sm theme-toggle-btn" data-theme-toggle aria-pressed="false"
+          title="Chuyển sang giao diện sáng">
           <i data-lucide="sun" data-theme-icon></i>
           <span data-theme-label>Giao diện sáng</span>
         </button>
@@ -63,8 +59,14 @@
             </button>
           </div>
           <div class="stat-row" id="statRow" style="display:none">
-            <div class="stat hd"><div class="lbl">Hoạt động</div><div class="val" id="statHd">0</div></div>
-            <div class="stat cv"><div class="lbl">Chức vụ</div><div class="val" id="statCv">0</div></div>
+            <div class="stat hd">
+              <div class="lbl">Hoạt động</div>
+              <div class="val" id="statHd">0</div>
+            </div>
+            <div class="stat cv">
+              <div class="lbl">Chức vụ</div>
+              <div class="val" id="statCv">0</div>
+            </div>
           </div>
         </div>
         <span class="detail-spin" id="spin" style="display:none"></span>
@@ -85,8 +87,12 @@
     </section>
 
     <section class="block" id="sec-verdict" style="display:none">
-      <div class="block-hd"><i data-lucide="check-circle-2"></i><h2>Tóm tắt</h2></div>
-      <div class="block-bd"><div class="verdict neutral" id="verdictLine"></div></div>
+      <div class="block-hd"><i data-lucide="check-circle-2"></i>
+        <h2>Tóm tắt</h2>
+      </div>
+      <div class="block-bd">
+        <div class="verdict neutral" id="verdictLine"></div>
+      </div>
     </section>
 
     <section class="block" id="sec-hoatdong">
@@ -128,14 +134,18 @@
     </section>
 
     <section class="block" id="sec-biendong">
-      <div class="block-hd"><i data-lucide="git-branch"></i><h2>Thay đổi chức vụ</h2><span class="cnt" id="cntBd">0 tin</span></div>
-      <div class="block-bd"><div class="feed feed-scrollable" id="listBienDong"></div></div>
+      <div class="block-hd"><i data-lucide="git-branch"></i>
+        <h2>Thay đổi chức vụ</h2><span class="cnt" id="cntBd">0 tin</span>
+      </div>
+      <div class="block-bd">
+        <div class="feed feed-scrollable" id="listBienDong"></div>
+      </div>
     </section>
   </div>
 
   <script>
     function escapeHtml(s) {
-      return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+      return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     }
     function qs(n) { return new URL(location.href).searchParams.get(n); }
 
@@ -225,7 +235,7 @@
       else if (tp) kvRows.push(['Chức vụ', tp]);
       if (fp) kvRows.push(['Trước đây', fp]);
       if (cd) kvRows.push(['Ngày', cd]);
-      const kv = kvRows.length ? '<dl class="kv">' + kvRows.map(([k,v]) =>
+      const kv = kvRows.length ? '<dl class="kv">' + kvRows.map(([k, v]) =>
         `<dt>${escapeHtml(k)}</dt><dd>${escapeHtml(v)}</dd>`).join('') + '</dl>' : '';
       const bullets = Array.isArray(ai.Activity_Bullets) && ai.Activity_Bullets.length
         ? '<ul class="bullets">' + ai.Activity_Bullets.map(b => `<li>${escapeHtml(b)}</li>`).join('') + '</ul>' : '';
@@ -283,14 +293,14 @@
       const name = (qs('name') || '').trim();
       let hours = 24;
       const h = qs('hours');
-      if (h) { const v = Number(String(h).replace(',','.')); if (v > 0) hours = v; }
+      if (h) { const v = Number(String(h).replace(',', '.')); if (v > 0) hours = v; }
       window.__DETAIL_TARGET__ = name;
       window.__DETAIL_HOURS__ = hours;
 
       const spin = document.getElementById('spin');
       spin.style.display = 'block';
       if (!name) {
-        document.getElementById('pageSub').textContent = 'Thiếu tên đối tượng';
+        document.getElementById('pageSub').textContent = 'Thiếu tên mục tiêu bảo vệ';
         spin.style.display = 'none';
         return;
       }
@@ -314,7 +324,7 @@
         const bio = (profile.bio || '').trim();
         document.getElementById('pageSub').textContent =
           (position ? position + ' · ' : '') + 'Thời gian ' + hours + ' giờ';
-        document.getElementById('pageBioText').textContent = bio || 'Chưa có tiểu sử cho đối tượng này.';
+        document.getElementById('pageBioText').textContent = bio || 'Chưa có tiểu sử cho mục tiêu bảo vệ này.';
         const btnBio = document.getElementById('btnToggleBio');
         if (btnBio) {
           btnBio.hidden = !bio;
@@ -376,7 +386,7 @@
       const btn = document.getElementById('btnScanTarget');
       if (!btn) return;
       btn.disabled = !!busy;
-      btn.title = busy ? 'Đang có lượt quét — vui lòng đợi' : 'Quét riêng đối tượng này (không quét các đối tượng khác)';
+      btn.title = busy ? 'Đang có lượt quét — vui lòng đợi' : 'Quét riêng mục tiêu bảo vệ này (không quét các mục tiêu bảo vệ khác)';
     }
 
     async function pollDetailScanStatus() {
@@ -460,4 +470,5 @@
     });
   </script>
 </body>
+
 </html>

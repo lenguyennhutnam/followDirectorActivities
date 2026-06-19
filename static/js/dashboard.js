@@ -1,4 +1,4 @@
-/* Bảng giám sát — đối tượng & tín hiệu */
+/* Bảng giám sát — mục tiêu bảo vệ & tín hiệu */
 
 function escapeHtml(s) {
   return String(s ?? "").replace(/[&<>"']/g, (c) =>
@@ -49,7 +49,7 @@ function updateTargetScopeMeta(targetCount, hours) {
   if (!el) return;
   const n = Number(targetCount);
   const h = Number(hours);
-  const nLabel = Number.isFinite(n) && n >= 0 ? `${n} đối tượng` : "— đối tượng";
+  const nLabel = Number.isFinite(n) && n >= 0 ? `${n} mục tiêu bảo vệ` : "— mục tiêu bảo vệ";
   const hLabel =
     Number.isFinite(h) && h > 0 ? `hiển thị ${h} giờ gần nhất` : "hiển thị — giờ gần nhất";
   el.textContent = `${nLabel} · ${hLabel}`;
@@ -311,7 +311,7 @@ function renderTargets(cfg) {
   targetsList.innerHTML = "";
   if (!targets.length) {
     targetsList.innerHTML =
-      '<div class="empty" title="Thêm đối tượng bên trên"><i data-lucide="users"></i>Chưa có</div>';
+      '<div class="empty" title="Thêm mục tiêu bảo vệ bên trên"><i data-lucide="users"></i>Chưa có</div>';
     if (window.lucide) lucide.createIcons();
     return;
   }
@@ -390,7 +390,7 @@ function renderTargets(cfg) {
       e.stopPropagation();
       const name =
         cfgTargets()[Number(btn.getAttribute("data-del"))]?.name || "";
-      if (!confirm("Xóa đối tượng \"" + name + "\"?")) return;
+      if (!confirm("Xóa mục tiêu bảo vệ \"" + name + "\"?")) return;
       try {
         await postJson("/config/targets/delete", { name });
         if (editingTarget() === name) setEditMode(null);
@@ -465,7 +465,7 @@ function renderSummaries(summaries) {
         </div>
         ${snippet ? `<p class="card-snippet">${escapeHtml(snippet)}</p>` : ""}
         <div class="card-actions">
-          <button type="button" class="btn btn-glass btn-sm btn-scan-target" data-scan-target="${escapeHtml(name)}" title="Quét riêng đối tượng này (không quét các đối tượng khác)">
+          <button type="button" class="btn btn-glass btn-sm btn-scan-target" data-scan-target="${escapeHtml(name)}" title="Quét riêng mục tiêu bảo vệ này (không quét các mục tiêu bảo vệ khác)">
             <i data-lucide="play"></i> Quét riêng
           </button>
           <a class="btn btn-glass btn-sm" href="${escapeHtml(href)}">
@@ -539,7 +539,7 @@ function renderKpiRow(summaries) {
   }
   return `
     <div class="side-kpi-row side-kpi-row-3">
-      <div class="side-kpi"><b>${list.length}</b><span>Đối tượng</span></div>
+      <div class="side-kpi"><b>${list.length}</b><span>mục tiêu bảo vệ</span></div>
       <div class="side-kpi"><b>${nChange}</b><span>Biến động</span></div>
       <div class="side-kpi"><b>${nAct}</b><span>Có hoạt động</span></div>
     </div>`;
@@ -639,7 +639,7 @@ async function loadAll() {
   if (statusData.success !== false) {
     setServerScanning(!!(statusData.status || {}).is_scanning);
   }
-  if (cfg.success === false) throw new Error(cfg.error || "Lỗi tải đối tượng");
+  if (cfg.success === false) throw new Error(cfg.error || "Lỗi tải mục tiêu bảo vệ");
   if (sumData.success === false) throw new Error(sumData.error || "Lỗi tải tín hiệu");
   const targetList = { targets: cfg.targets || [] };
   window.__CFG_TARGETS__ = targetList.targets;
@@ -684,7 +684,7 @@ function applyScanLockUi() {
       ? serverScanning
         ? "Đang quét — vui lòng đợi"
         : "Đang gửi yêu cầu quét…"
-      : "Quét tất cả đối tượng trong danh sách";
+      : "Quét tất cả mục tiêu bảo vệ trong danh sách";
   }
   if (runSpinner) {
     runSpinner.style.display = locked ? "inline-block" : "none";
@@ -700,7 +700,7 @@ function applyScanLockUi() {
     btn.disabled = locked;
     btn.title = locked
       ? "Đang quét — vui lòng đợi"
-      : "Quét riêng đối tượng này (không quét các đối tượng khác)";
+      : "Quét riêng mục tiêu bảo vệ này (không quét các mục tiêu bảo vệ khác)";
     btn.classList.remove("scanning");
   });
 }
@@ -736,7 +736,7 @@ function formatScanResultMessage(data, targetName) {
     if (data.telegram_sent > 0) {
       msg += ` · Telegram: ${data.telegram_sent} tin nhắn`;
       if (data.telegram_sent_empty > 0) {
-        msg += ` (${data.telegram_sent_empty} đối tượng trống)`;
+        msg += ` (${data.telegram_sent_empty} mục tiêu bảo vệ trống)`;
       }
     } else if (data.processed_new > 0 && data.telegram_errors?.length) {
       msg += ` · Telegram lỗi: ${data.telegram_errors[0]}`;
@@ -805,7 +805,7 @@ async function runMonitorScan({ targetName = null, targetNames = null } = {}) {
     const label = targetName
       ? `Đang quét: ${targetName}…`
       : multi
-      ? `Đang quét ${targetNames.length} đối tượng…`
+      ? `Đang quét ${targetNames.length} mục tiêu bảo vệ…`
       : "Đang quét tất cả…";
     flashStatus(label, false);
     const hours = parseHoursRange();
@@ -929,7 +929,7 @@ function initDashboard() {
     if (btn) { btn.disabled = true; btn.textContent = "Đang hủy…"; }
     try {
       await postJson("/monitor/cancel", {});
-      flashStatus("Đã gửi yêu cầu hủy — đợi đối tượng hiện tại xong…", false);
+      flashStatus("Đã gửi yêu cầu hủy — đợi mục tiêu bảo vệ hiện tại xong…", false);
     } catch (e) {
       flashStatus(e?.message || "Không thể hủy", false);
       if (btn) { btn.disabled = false; btn.innerHTML = '<i data-lucide="square"></i> Hủy quét'; if (window.lucide) lucide.createIcons(); }

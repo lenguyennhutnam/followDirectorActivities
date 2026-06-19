@@ -1,4 +1,4 @@
-# TODO - Sửa lỗi quét nhầm đối tượng
+# TODO - Sửa lỗi quét nhầm mục tiêu bảo vệ
 
 - [ ] B1: Dọn `call_gemini_for_change()` bỏ phần code thừa (đoạn prompt/return thứ 2 không chạy nhưng đang gây nhiễu/khó bảo trì) chỉ giữ 1 luồng.
 - [ ] B2: Siết prompt Gemini để trả thêm `Matched_Target` và nếu `Matched_Target=false` thì ép `Is_Activity=false`.

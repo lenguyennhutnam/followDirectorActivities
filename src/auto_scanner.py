@@ -48,12 +48,12 @@ class AutoScanner:
         return st
 
     def request_cancel(self) -> bool:
-        """Yêu cầu dừng lượt quét hiện tại — dừng giữa các đối tượng, không ngắt giữa Gemini call."""
+        """Yêu cầu dừng lượt quét hiện tại — dừng giữa các mục tiêu bảo vệ, không ngắt giữa Gemini call."""
         if not self._state.get("is_scanning"):
             return False
         self._cancel.set()
         self._state["cancel_requested"] = True
-        print("[SCAN] Yêu cầu hủy quét — sẽ dừng sau khi đối tượng hiện tại xong", flush=True)
+        print("[SCAN] Yêu cầu hủy quét — sẽ dừng sau khi mục tiêu bảo vệ hiện tại xong", flush=True)
         return True
 
     def _sync_ai_mode_state(self) -> None:
@@ -206,9 +206,9 @@ class AutoScanner:
             self._state["last_scan_source"] = source
             label = f"[SCAN] === Bắt đầu lượt quét ({source}) ==="
             if target_name:
-                label += f" · đối tượng: {target_name}"
+                label += f" · mục tiêu bảo vệ: {target_name}"
             elif target_names:
-                label += f" · {len(target_names)} đối tượng được chọn"
+                label += f" · {len(target_names)} mục tiêu bảo vệ được chọn"
             print(label, flush=True)
 
             self._sync_ai_mode_state()

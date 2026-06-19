@@ -268,7 +268,7 @@ AI_SCAN_PROFILES: Dict[str, Dict[str, Any]] = {
     },
     "participation": {
         "label": "AI — có sự tham gia",
-        "hint": "Gemini chỉ giữ bài mà đúng đối tượng có tham gia/hành động/phát biểu/chủ trì/dự hoặc là người được bổ nhiệm/miễn nhiệm.",
+        "hint": "Gemini chỉ giữ bài mà đúng mục tiêu bảo vệ có tham gia/hành động/phát biểu/chủ trì/dự hoặc là người được bổ nhiệm/miễn nhiệm.",
         "use_gemini": True,
         "ai_verify_target": True,
         "scan_role_change": False,
@@ -276,7 +276,7 @@ AI_SCAN_PROFILES: Dict[str, Dict[str, Any]] = {
         "strict_participation": True,
     },
     "activity": {
-        "label": "AI — hoạt động & đúng đối tượng",
+        "label": "AI — hoạt động & đúng mục tiêu bảo vệ",
         "hint": "Gemini lọc hoạt động và xác nhận đúng tên; không quét truy vấn bổ nhiệm/miễn nhiệm.",
         "use_gemini": True,
         "ai_verify_target": True,
@@ -286,7 +286,7 @@ AI_SCAN_PROFILES: Dict[str, Dict[str, Any]] = {
     },
     "full": {
         "label": "AI — đầy đủ (cả biến động chức vụ)",
-        "hint": "Thêm lượt tìm bổ nhiệm/miễn nhiệm và kênh biến động; dễ lẫn tin người khác nếu tắt xác nhận đối tượng.",
+        "hint": "Thêm lượt tìm bổ nhiệm/miễn nhiệm và kênh biến động; dễ lẫn tin người khác nếu tắt xác nhận mục tiêu bảo vệ.",
         "use_gemini": True,
         "ai_verify_target": True,
         "scan_role_change": True,
@@ -294,8 +294,8 @@ AI_SCAN_PROFILES: Dict[str, Dict[str, Any]] = {
         "strict_participation": False,
     },
     "open": {
-        "label": "AI — không lọc đối tượng (cũ)",
-        "hint": "Gemini bật nhưng không bắt Matched_Target — dễ nhầm người. Nên chuyển sang «hoạt động & đúng đối tượng».",
+        "label": "AI — không lọc mục tiêu bảo vệ (cũ)",
+        "hint": "Gemini bật nhưng không bắt Matched_Target — dễ nhầm người. Nên chuyển sang «hoạt động & đúng mục tiêu bảo vệ».",
         "use_gemini": True,
         "ai_verify_target": False,
         "scan_role_change": False,
@@ -493,7 +493,7 @@ def _sanitize_ai_result(
     news_kind: str,
     allow_role_change: bool = True,
 ) -> Dict[str, Any]:
-    """Hậu kiểm Gemini — giảm nhầm đối tượng và nhầm hoạt động với đổi chức vụ."""
+    """Hậu kiểm Gemini — giảm nhầm mục tiêu bảo vệ và nhầm hoạt động với đổi chức vụ."""
     title = str(article.get("title") or "")
     desc = str(article.get("description") or "")
     text = f"{title} {desc}"
@@ -516,7 +516,7 @@ def _sanitize_ai_result(
         change = False
         notes.append("biendong_ten_phai_co_trong_tieu_de")
 
-    if "không liên quan đối tượng" in sl:
+    if "không liên quan mục tiêu bảo vệ" in sl:
         matched = False
         activity = False
         change = False
@@ -707,7 +707,7 @@ def save_history(history_urls: List[str]) -> None:
 
 
 def update_target_identity(old_name: str, new_name: str, position: str, bio: str = "") -> None:
-    """Đổi tên/chức vụ/tiểu sử đối tượng trong notifications và history."""
+    """Đổi tên/chức vụ/tiểu sử mục tiêu bảo vệ trong notifications và history."""
     old = str(old_name or "").strip()
     new = str(new_name or "").strip()
     pos = str(position or "").strip()
@@ -909,14 +909,14 @@ def call_gemini_for_change(
     prompt = (
         "Bạn là hệ thống phân tích tin tức. "
 
-        "Hãy đọc bài báo sau và chỉ xét đúng đối tượng: {name} (không suy rộng sang người khác). "
+        "Hãy đọc bài báo sau và chỉ xét đúng mục tiêu bảo vệ: {name} (không suy rộng sang người khác). "
         "Luôn xác định Matched_Target trước; đừng đặt Matched_Target=false chỉ vì bài không phải hoạt động.\n\n"
         "Ngữ cảnh truy vấn: {kind_hint}\n\n"
         "QUY TẮC Matched_Target (rất quan trọng):\n"
         "- Matched_Target=true CHỈ KHI bài nói TRỰC TIẾP về {name} — là nhân vật chính, người hành động, hoặc người được bổ nhiệm/miễn nhiệm.\n"
         "- Matched_Target=false nếu chỉ nhắc tên qua loa, nhắc trong danh sách nhiều người, "
         "hay nhầm người khác cùng họ hoặc tên gần giống.\n"
-        "- Việc bài có từ khóa bổ nhiệm/miễn nhiệm nhưng đối tượng là NGƯỜI KHÁC => Matched_Target=false.\n"
+        "- Việc bài có từ khóa bổ nhiệm/miễn nhiệm nhưng mục tiêu bảo vệ là NGƯỜI KHÁC => Matched_Target=false.\n"
         "- Tiêu đề/mô tả có thể chỉ ghi chức danh (vd. Tổng Bí thư) không ghi đủ họ tên — "
         "vẫn Matched_Target=true nếu ngữ cảnh rõ là {name} (chức vụ tham chiếu: {position_ref}) "
         "và không thể hiểu là người khác.\n"
@@ -932,16 +932,16 @@ def call_gemini_for_change(
         "- Không coi họp, phát biểu, thăm hỏi, hoạt động thường nhật là đổi chức vụ.\n"
         "- Bắt buộc điền From_Position hoặc To_Position hoặc Decision_Text nếu Is_Change=true; "
         "thiếu cả ba => Is_Change=false.\n\n"
-        "Đối tượng: {name}. Chức vụ tham chiếu: {position_ref}.\n"
+        "mục tiêu bảo vệ: {name}. Chức vụ tham chiếu: {position_ref}.\n"
         "Tiểu sử/ngữ cảnh nhận diện: {bio_ref}\n\n"
         "Bài báo:\n"
         "- Tiêu đề: {title}\n"
         "- Mô tả: {description}\n"
         "- URL: {url}\n\n"
         "Trả về ĐÚNG một JSON (bắt buộc có đủ các khóa) với:\n"
-        "Matched_Target (true/false) - bài có nói đúng đối tượng {name} không?\n"
-        "Is_Activity (true/false) - (chỉ tính nếu Matched_Target=true) bài có nói về hoạt động/việc làm của đối tượng không?\n"
-        "Is_Change (true/false) - (chỉ tính nếu Is_Activity=true) bài có nói về thay đổi chức vụ của đối tượng không?\n"
+        "Matched_Target (true/false) - bài có nói đúng mục tiêu bảo vệ {name} không?\n"
+        "Is_Activity (true/false) - (chỉ tính nếu Matched_Target=true) bài có nói về hoạt động/việc làm của mục tiêu bảo vệ không?\n"
+        "Is_Change (true/false) - (chỉ tính nếu Is_Activity=true) bài có nói về thay đổi chức vụ của mục tiêu bảo vệ không?\n"
         "Change_Date (string ISO hoặc 'DD/MM/YYYY'; nếu không có thì để rỗng chuỗi '')\n"
         "From_Position (string; nếu không trích được thì để rỗng chuỗi '')\n"
         "To_Position (string; nếu không trích được thì để rỗng chuỗi '')\n"
@@ -950,7 +950,7 @@ def call_gemini_for_change(
         "Confidence (0-100 số)\n"
         "Không thêm văn bản ngoài JSON.\n\n"
         "Luật Summary (BẮT BUỘC):\n"
-        "- Nếu Matched_Target = false => Summary = 'Không liên quan đối tượng'\n"
+        "- Nếu Matched_Target = false => Summary = 'Không liên quan mục tiêu bảo vệ'\n"
         "- Nếu Matched_Target = true nhưng Is_Activity = false => Summary = 'Không liên quan hoạt động'\n"
         "- Nếu Is_Activity = true và Is_Change = false => Summary đúng 1 câu: '{name}: không thay đổi chức vụ, {position_or_default}.'\n"
         "- Nếu Is_Activity = true và Is_Change = true => Summary đúng 1 câu: '{name}: [DATE], chuyển từ [FROM] sang [TO] theo quyết định [DECISION]'\n"
@@ -1491,8 +1491,8 @@ def process_once(
         )
     elif ai_mode == "open":
         print(
-            "[SCAN] Cảnh báo: chế độ AI không lọc đối tượng — "
-            "nên chọn «hoạt động & đúng đối tượng» trong Cài đặt"
+            "[SCAN] Cảnh báo: chế độ AI không lọc mục tiêu bảo vệ — "
+            "nên chọn «hoạt động & đúng mục tiêu bảo vệ» trong Cài đặt"
         )
     print(f"[SCAN] Chế độ AI: {ai_opts['label']} ({ai_mode})")
     if ignore_history:
@@ -1502,9 +1502,9 @@ def process_once(
     if not scan_role_change and use_gemini:
         print("  → Không quét truy vấn bổ nhiệm/miễn nhiệm, không lưu kênh biendong")
     if use_gemini and not require_activity:
-        print("  → Chỉ yêu cầu đúng đối tượng; không bắt buộc bài là hoạt động")
+        print("  → Chỉ yêu cầu đúng mục tiêu bảo vệ; không bắt buộc bài là hoạt động")
     if use_gemini and strict_participation:
-        print("  → Lọc chặt: chỉ lưu bài có sự tham gia/hành động của đúng đối tượng")
+        print("  → Lọc chặt: chỉ lưu bài có sự tham gia/hành động của đúng mục tiêu bảo vệ")
 
     language = str(gn.get("language") or "vi")
     country = str(gn.get("country") or "VN")
@@ -1536,11 +1536,11 @@ def process_once(
     if filter_name:
         targets = [t for t in targets if t.name == filter_name]
         if not targets:
-            raise ValueError(f'Không tìm thấy đối tượng "{filter_name}" trong cấu hình')
+            raise ValueError(f'Không tìm thấy mục tiêu bảo vệ "{filter_name}" trong cấu hình')
     elif filter_names:
         targets = [t for t in targets if t.name in filter_names]
         if not targets:
-            raise ValueError(f'Không tìm thấy đối tượng nào trong danh sách đã chọn')
+            raise ValueError(f'Không tìm thấy mục tiêu bảo vệ nào trong danh sách đã chọn')
 
     perf = _scan_perf_options(gn)
     filter_press = is_chinh_thong_filter_enabled(cfg)
@@ -1567,7 +1567,7 @@ def process_once(
     cancelled = False
     for ti, target in enumerate(targets, start=1):
         if cancel_fn is not None and cancel_fn():
-            print(f"[SCAN] Hủy quét theo yêu cầu — đã xong {ti - 1}/{len(targets)} đối tượng", flush=True)
+            print(f"[SCAN] Hủy quét theo yêu cầu — đã xong {ti - 1}/{len(targets)} mục tiêu bảo vệ", flush=True)
             cancelled = True
             break
         print(f"[SCAN] ({ti}/{len(targets)}) {target.name}")
@@ -1722,7 +1722,7 @@ def process_once(
         print(f"  [AI] tổng {len(ai_errors)} lỗi trong lượt quét này")
 
     print(
-        f"[SCAN] Hoàn tất — {len(targets)} đối tượng, +{saved_count} tin mới, "
+        f"[SCAN] Hoàn tất — {len(targets)} mục tiêu bảo vệ, +{saved_count} tin mới, "
         f"{len(history_set)} URL trong history"
     )
     sys.stdout.flush()

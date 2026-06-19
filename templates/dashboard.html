@@ -50,11 +50,11 @@
       <div class="sidebar-scroll">
         <div class="sidebar-scroll-head">
           <div class="sec-label sec-label-row">
-            <span><i data-lucide="users"></i> Đối tượng</span>
+            <span><i data-lucide="users"></i> Mục tiêu bảo vệ</span>
             <div style="display:flex;align-items:center;gap:6px">
               <span class="search-hint" id="targetSearchHint" hidden></span>
               <button type="button" class="btn btn-glass btn-icon btn-add-toggle" id="btnToggleAddForm"
-                title="Thêm đối tượng mới">
+                title="Thêm mục tiêu bảo vệ mới">
                 <i data-lucide="plus"></i>
               </button>
             </div>
@@ -74,7 +74,8 @@
             <div class="add-row">
               <input class="inp-text" type="text" id="targetName" placeholder="Họ tên" aria-label="Họ tên" />
               <input class="inp-text" type="text" id="targetPos" placeholder="Chức vụ" aria-label="Chức vụ" />
-              <textarea class="inp-text target-bio-input" id="targetBio" rows="4" placeholder="Tiểu sử ngắn, quá trình công tác, thông tin nhận diện…" aria-label="Tiểu sử"></textarea>
+              <textarea class="inp-text target-bio-input" id="targetBio" rows="4"
+                placeholder="Tiểu sử ngắn, quá trình công tác, thông tin nhận diện…" aria-label="Tiểu sử"></textarea>
               <div class="target-form-actions" id="targetFormActions">
                 <button type="button" class="btn btn-glass" id="btnAddTarget" style="grid-column:1/-1">
                   <i data-lucide="plus" id="btnTargetIcon"></i>
@@ -89,7 +90,7 @@
         </div>
         <div class="sidebar-scroll-body">
           <div class="targets" id="targetsList"></div>
-          <p class="search-filter-empty" id="targetsFilterEmpty" hidden>Không có đối tượng khớp tìm kiếm.</p>
+          <p class="search-filter-empty" id="targetsFilterEmpty" hidden>Không có mục tiêu bảo vệ khớp tìm kiếm.</p>
         </div>
       </div>
     </aside>
@@ -121,7 +122,8 @@
           <button type="button" class="btn btn-glass btn-icon" id="btnRefresh" title="Tải lại">
             <i data-lucide="refresh-cw"></i>
           </button>
-          <button type="button" class="btn btn-primary" id="btnRunNow" title="Quét tất cả đối tượng trong danh sách">
+          <button type="button" class="btn btn-primary" id="btnRunNow"
+            title="Quét tất cả mục tiêu bảo vệ trong danh sách">
             <span class="spinner" id="runSpinner"></span>
             <i data-lucide="play"></i> Quét hoạt động
           </button>
@@ -218,7 +220,7 @@
           </div>
           <label class="setting-row">
             <div class="lbl">
-              <strong>Số tin tối đa / đối tượng</strong>
+              <strong>Số tin tối đa / mục tiêu bảo vệ</strong>
               <span>Mỗi lần quét Google News</span>
             </div>
             <input class="inp-num" type="number" id="setMaxResults" min="1" max="50" value="15" />
@@ -276,7 +278,8 @@
           <label class="setting-row">
             <div class="lbl">
               <strong>Gửi tin «không có hoạt động»</strong>
-              <span>Tắt (khuyên dùng): tránh spam và tránh 2 tin cùng đối tượng (trống rồi có bài). Chỉ gửi khi có tin
+              <span>Tắt (khuyên dùng): tránh spam và tránh 2 tin cùng mục tiêu bảo vệ (trống rồi có bài). Chỉ gửi khi có
+                tin
                 mới.</span>
             </div>
             <label class="toggle">

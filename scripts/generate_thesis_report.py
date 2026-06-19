@@ -159,7 +159,7 @@ def build_document() -> tuple[str, bool]:
         [
             para("BÁO CÁO LUẬN ÁN", style="Title", align="center", after=260),
             para(
-                "XÂY DỰNG HỆ THỐNG GIÁM SÁT TIN TỨC VỀ HOẠT ĐỘNG VÀ BIẾN ĐỘNG CHỨC VỤ CỦA ĐỐI TƯỢNG LÃNH ĐẠO",
+                "XÂY DỰNG HỆ THỐNG GIÁM SÁT TIN TỨC VỀ HOẠT ĐỘNG VÀ BIẾN ĐỘNG CHỨC VỤ CỦA mục tiêu bảo vệ LÃNH ĐẠO",
                 style="Subtitle",
                 align="center",
                 after=360,
@@ -183,10 +183,10 @@ def build_document() -> tuple[str, bool]:
         [
             heading("LỜI MỞ ĐẦU", 1),
             para(
-                "Trong thời đại thông tin số, tin tức về hoạt động của lãnh đạo, cơ quan quản lý và nhân vật công chúng được cập nhật liên tục trên nhiều báo điện tử, cổng thông tin và nền tảng tổng hợp tin. Việc theo dõi thủ công từng đối tượng đòi hỏi nhiều thời gian, dễ bỏ sót tin quan trọng và khó phân biệt giữa bài viết thật sự liên quan với bài chỉ nhắc tên hoặc nhắc chức danh một cách gián tiếp."
+                "Trong thời đại thông tin số, tin tức về hoạt động của lãnh đạo, cơ quan quản lý và nhân vật công chúng được cập nhật liên tục trên nhiều báo điện tử, cổng thông tin và nền tảng tổng hợp tin. Việc theo dõi thủ công từng mục tiêu bảo vệ đòi hỏi nhiều thời gian, dễ bỏ sót tin quan trọng và khó phân biệt giữa bài viết thật sự liên quan với bài chỉ nhắc tên hoặc nhắc chức danh một cách gián tiếp."
             ),
             para(
-                "Đề tài này tập trung xây dựng một hệ thống giám sát tin tức tự động, có khả năng thu thập, phân tích, phân loại và hiển thị kết quả theo từng đối tượng. Điểm nổi bật của hệ thống là kết hợp giữa tìm kiếm tin tức, lọc nguồn báo, phân tích bằng trí tuệ nhân tạo và giao diện dashboard để hỗ trợ người vận hành đưa ra đánh giá nhanh."
+                "Đề tài này tập trung xây dựng một hệ thống giám sát tin tức tự động, có khả năng thu thập, phân tích, phân loại và hiển thị kết quả theo từng mục tiêu bảo vệ. Điểm nổi bật của hệ thống là kết hợp giữa tìm kiếm tin tức, lọc nguồn báo, phân tích bằng trí tuệ nhân tạo và giao diện dashboard để hỗ trợ người vận hành đưa ra đánh giá nhanh."
             ),
             para(
                 "Báo cáo trình bày đầy đủ cơ sở hình thành đề tài, mục tiêu, yêu cầu, thiết kế kiến trúc, thiết kế dữ liệu, quy trình xử lý, chức năng giao diện, bảo mật, kiểm thử, đánh giá kết quả và định hướng phát triển của chương trình."
@@ -194,19 +194,19 @@ def build_document() -> tuple[str, bool]:
             page_break(),
             heading("TÓM TẮT BÁO CÁO", 1),
             para(
-                "Chương trình followDirectorActivities là một ứng dụng web chạy cục bộ, cho phép người dùng quản lý danh sách đối tượng cần theo dõi, cấu hình cách tìm kiếm tin tức, lựa chọn chế độ phân tích AI, thực hiện quét thủ công hoặc quét nền tự động, xem kết quả trên dashboard và nhận thông báo qua Telegram."
+                "Chương trình followDirectorActivities là một ứng dụng web chạy cục bộ, cho phép người dùng quản lý danh sách mục tiêu bảo vệ cần theo dõi, cấu hình cách tìm kiếm tin tức, lựa chọn chế độ phân tích AI, thực hiện quét thủ công hoặc quét nền tự động, xem kết quả trên dashboard và nhận thông báo qua Telegram."
             ),
             para(
-                "Hệ thống sử dụng Google News và RSS để thu thập tin, sau đó dùng Gemini AI để đánh giá các tiêu chí nghiệp vụ: bài viết có đúng đối tượng không, đối tượng có sự tham gia hoặc hoạt động trong bài không, và bài viết có phản ánh biến động chức vụ không. Kết quả được lưu thành hai nhóm dữ liệu chính là tin hoạt động và tin biến động chức vụ."
+                "Hệ thống sử dụng Google News và RSS để thu thập tin, sau đó dùng Gemini AI để đánh giá các tiêu chí nghiệp vụ: bài viết có đúng mục tiêu bảo vệ không, mục tiêu bảo vệ có sự tham gia hoặc hoạt động trong bài không, và bài viết có phản ánh biến động chức vụ không. Kết quả được lưu thành hai nhóm dữ liệu chính là tin hoạt động và tin biến động chức vụ."
             ),
             table(
                 [
                     ["Chỉ tiêu", "Giá trị hiện tại"],
-                    ["Số đối tượng đang cấu hình", len(targets)],
+                    ["Số mục tiêu bảo vệ đang cấu hình", len(targets)],
                     ["Số nguồn báo chính thống", press_count],
                     ["Chế độ AI hiện tại", google_news.get("ai_scan_mode", "")],
                     ["Cách tìm kiếm hiện tại", google_news.get("search_match_mode", "")],
-                    ["Số tin tối đa cho mỗi đối tượng", google_news.get("max_results_per_target", "")],
+                    ["Số tin tối đa cho mỗi mục tiêu bảo vệ", google_news.get("max_results_per_target", "")],
                     ["Số tin hoạt động đã lưu", channel_hd],
                     ["Số tin biến động chức vụ đã lưu", channel_bd],
                     ["Số URL trong lịch sử xử lý", history_count],
@@ -244,17 +244,17 @@ def build_document() -> tuple[str, bool]:
             [
                 ("1.1. Lý do chọn đề tài", [
                     "Hoạt động của lãnh đạo và biến động chức vụ là nhóm thông tin có giá trị theo dõi cao trong nhiều bối cảnh như tổng hợp báo cáo, truyền thông, hành chính, nghiên cứu tổ chức, theo dõi chính sách và quản trị thông tin.",
-                    "Một bài báo có thể chỉ nhắc tên đối tượng trong phần bối cảnh nhưng nội dung chính lại nói về cơ quan, địa phương hoặc một cá nhân khác. Nếu chỉ dùng tìm kiếm từ khóa, hệ thống dễ thu về nhiều tin nhiễu. Vì vậy, đề tài cần một cơ chế phân tích ngữ nghĩa để xác định bài viết có thật sự liên quan hay không.",
+                    "Một bài báo có thể chỉ nhắc tên mục tiêu bảo vệ trong phần bối cảnh nhưng nội dung chính lại nói về cơ quan, địa phương hoặc một cá nhân khác. Nếu chỉ dùng tìm kiếm từ khóa, hệ thống dễ thu về nhiều tin nhiễu. Vì vậy, đề tài cần một cơ chế phân tích ngữ nghĩa để xác định bài viết có thật sự liên quan hay không.",
                 ]),
                 ("1.2. Mục tiêu nghiên cứu", [
-                    "Tự động hóa quy trình tìm kiếm và tổng hợp tin tức theo từng đối tượng.",
-                    "Giảm tin nhiễu bằng cách sử dụng AI để kiểm tra đúng đối tượng và sự tham gia của đối tượng trong bài viết.",
+                    "Tự động hóa quy trình tìm kiếm và tổng hợp tin tức theo từng mục tiêu bảo vệ.",
+                    "Giảm tin nhiễu bằng cách sử dụng AI để kiểm tra đúng mục tiêu bảo vệ và sự tham gia của mục tiêu bảo vệ trong bài viết.",
                     "Phát hiện các bài viết có dấu hiệu thay đổi chức vụ như bổ nhiệm, miễn nhiệm, điều động hoặc phân công nhiệm vụ.",
                     "Cung cấp giao diện trực quan để người dùng theo dõi, lọc, đánh dấu và xuất dữ liệu.",
                     "Hỗ trợ vận hành liên tục thông qua quét nền và thông báo Telegram.",
                 ]),
                 ("1.3. Phạm vi nghiên cứu", [
-                    "Đối tượng nghiên cứu của hệ thống là các tin bài công khai trên Internet liên quan đến danh sách cá nhân được cấu hình. Phạm vi thu thập tập trung vào Google News và RSS của các nguồn báo được khai báo trong danh sách báo chính thống. Hệ thống không thay thế kết luận kiểm chứng của con người mà đóng vai trò công cụ hỗ trợ theo dõi và tổng hợp.",
+                    "mục tiêu bảo vệ nghiên cứu của hệ thống là các tin bài công khai trên Internet liên quan đến danh sách cá nhân được cấu hình. Phạm vi thu thập tập trung vào Google News và RSS của các nguồn báo được khai báo trong danh sách báo chính thống. Hệ thống không thay thế kết luận kiểm chứng của con người mà đóng vai trò công cụ hỗ trợ theo dõi và tổng hợp.",
                 ]),
             ],
         ),
@@ -262,13 +262,13 @@ def build_document() -> tuple[str, bool]:
             "CHƯƠNG 2. CƠ SỞ LÝ THUYẾT VÀ CÔNG NGHỆ SỬ DỤNG",
             [
                 ("2.1. Tổng hợp tin tức tự động", [
-                    "Tổng hợp tin tức tự động là quá trình lấy dữ liệu từ nhiều nguồn, chuẩn hóa thông tin, loại bỏ trùng lặp và trình bày kết quả theo một cấu trúc thống nhất. Trong chương trình này, dữ liệu tin gồm tiêu đề, mô tả, URL, nguồn báo, ngày đăng, đối tượng liên quan và kết quả phân tích AI.",
+                    "Tổng hợp tin tức tự động là quá trình lấy dữ liệu từ nhiều nguồn, chuẩn hóa thông tin, loại bỏ trùng lặp và trình bày kết quả theo một cấu trúc thống nhất. Trong chương trình này, dữ liệu tin gồm tiêu đề, mô tả, URL, nguồn báo, ngày đăng, mục tiêu bảo vệ liên quan và kết quả phân tích AI.",
                 ]),
                 ("2.2. Google News và RSS", [
                     "Google News có ưu điểm là phạm vi bao phủ rộng và hỗ trợ truy vấn theo từ khóa. RSS có ưu điểm là truy cập trực tiếp từ nguồn báo, ít phụ thuộc vào decode URL và thường nhanh hơn. Việc kết hợp hai nguồn giúp hệ thống vừa có độ phủ, vừa có độ ổn định khi lọc nguồn báo chính thống.",
                 ]),
                 ("2.3. Phân tích bằng mô hình ngôn ngữ lớn", [
-                    "Gemini AI được sử dụng để đọc tiêu đề, mô tả và ngữ cảnh đối tượng, sau đó trả về kết quả JSON. Việc yêu cầu AI trả JSON giúp hệ thống biến nhận định ngôn ngữ tự nhiên thành dữ liệu có cấu trúc để xử lý bằng chương trình.",
+                    "Gemini AI được sử dụng để đọc tiêu đề, mô tả và ngữ cảnh mục tiêu bảo vệ, sau đó trả về kết quả JSON. Việc yêu cầu AI trả JSON giúp hệ thống biến nhận định ngôn ngữ tự nhiên thành dữ liệu có cấu trúc để xử lý bằng chương trình.",
                 ]),
             ],
         ),
@@ -276,16 +276,16 @@ def build_document() -> tuple[str, bool]:
             "CHƯƠNG 3. KHẢO SÁT VÀ PHÂN TÍCH YÊU CẦU",
             [
                 ("3.1. Bài toán nghiệp vụ", [
-                    "Người vận hành cần biết trong một khoảng thời gian nhất định, mỗi đối tượng có hoạt động gì mới, có bài báo nào phản ánh sự thay đổi chức vụ hay không, và bài viết đó có thật sự liên quan đến đối tượng hay chỉ nhắc tên một cách gián tiếp.",
+                    "Người vận hành cần biết trong một khoảng thời gian nhất định, mỗi mục tiêu bảo vệ có hoạt động gì mới, có bài báo nào phản ánh sự thay đổi chức vụ hay không, và bài viết đó có thật sự liên quan đến mục tiêu bảo vệ hay chỉ nhắc tên một cách gián tiếp.",
                 ]),
                 ("3.2. Yêu cầu chức năng", [
-                    "Quản lý danh sách đối tượng với tên, chức vụ và tiểu sử.",
+                    "Quản lý danh sách mục tiêu bảo vệ với tên, chức vụ và tiểu sử.",
                     "Cấu hình nguồn báo chính thống và RSS tương ứng.",
                     "Chọn chế độ tìm kiếm Google News theo tên hoặc chức vụ, có hoặc không có ngoặc kép.",
                     "Chọn chế độ AI tùy mục tiêu: từ khóa, có sự tham gia, hoạt động, đầy đủ biến động chức vụ.",
-                    "Quét toàn bộ, quét riêng từng đối tượng hoặc quét một nhóm đối tượng được chọn.",
+                    "Quét toàn bộ, quét riêng từng mục tiêu bảo vệ hoặc quét một nhóm mục tiêu bảo vệ được chọn.",
                     "Tự quét nền theo chu kỳ cấu hình.",
-                    "Xem chi tiết tin liên quan, tin không liên quan và tin biến động chức vụ của từng đối tượng.",
+                    "Xem chi tiết tin liên quan, tin không liên quan và tin biến động chức vụ của từng mục tiêu bảo vệ.",
                     "Đánh dấu bài không liên quan, xuất dữ liệu JSON và gửi báo cáo Telegram.",
                 ]),
                 ("3.3. Yêu cầu phi chức năng", [
@@ -339,7 +339,7 @@ def build_document() -> tuple[str, bool]:
             table(
                 [
                     ["File", "Nội dung"],
-                    ["config/config.json", "Cấu hình AI, Google News, Telegram và danh sách đối tượng"],
+                    ["config/config.json", "Cấu hình AI, Google News, Telegram và danh sách mục tiêu bảo vệ"],
                     ["config/Chinh_thong.json", "Danh sách nguồn báo chính thống"],
                     ["data/notifications.json", "Tin hoạt động và tin biến động chức vụ"],
                     ["data/history.json", "Khóa target|url đã xử lý"],
@@ -350,7 +350,7 @@ def build_document() -> tuple[str, bool]:
             heading("5.2. Cấu trúc bản ghi tin tức", 2),
             para("Mỗi bản ghi tin tức gồm các thông tin chính: timestamp, target_name, target_position, target_bio, title, description, url, resolved_url, published, press_name, press_domain, news_kind và ai_result. Trường ai_result là JSON do Gemini trả về và đã qua bước chuẩn hóa/hậu kiểm."),
             heading("5.3. Chống trùng dữ liệu", 2),
-            para("Khóa chống trùng được thiết kế theo dạng tên đối tượng kết hợp URL. Cách này cho phép cùng một bài báo có thể được xét riêng cho nhiều đối tượng khác nhau, tránh trường hợp một URL xuất hiện với người A thì người B bị bỏ qua dù bài cũng có liên quan đến người B."),
+            para("Khóa chống trùng được thiết kế theo dạng tên mục tiêu bảo vệ kết hợp URL. Cách này cho phép cùng một bài báo có thể được xét riêng cho nhiều mục tiêu bảo vệ khác nhau, tránh trường hợp một URL xuất hiện với người A thì người B bị bỏ qua dù bài cũng có liên quan đến người B."),
             page_break(),
             heading("CHƯƠNG 6. THIẾT KẾ THUẬT TOÁN VÀ LUỒNG XỬ LÝ", 1),
             heading("6.1. Thuật toán quét một lượt", 2),
@@ -361,7 +361,7 @@ def build_document() -> tuple[str, bool]:
         [
             "Đọc cấu hình runtime, bao gồm secret đã overlay từ .env.",
             "Đồng bộ chế độ AI từ ai_scan_mode sang các cờ nội bộ.",
-            "Tạo danh sách đối tượng cần quét theo yêu cầu toàn bộ, một người hoặc nhiều người.",
+            "Tạo danh sách mục tiêu bảo vệ cần quét theo yêu cầu toàn bộ, một người hoặc nhiều người.",
             "Tạo truy vấn Google News theo search_match_mode.",
             "Thu thập bài viết từ Google News và RSS.",
             "Loại URL đã có trong history hoặc đã lưu, trừ khi ignore_history=true.",
@@ -379,7 +379,7 @@ def build_document() -> tuple[str, bool]:
     body.extend(
         [
             heading("6.2. Chế độ AI — có sự tham gia", 2),
-            para("Đây là chế độ mới nhằm loại bỏ các bài báo không có sự tham gia của đối tượng. Prompt yêu cầu Gemini chỉ đặt Is_Activity=true khi đối tượng trực tiếp dự, chủ trì, phát biểu, làm việc, chỉ đạo, ký quyết định, được bổ nhiệm/miễn nhiệm hoặc là người chịu tác động chính của sự kiện. Các bài chỉ nhắc tên, dẫn bối cảnh, liệt kê chức danh, nói về cơ quan/người khác hoặc tiểu sử tĩnh sẽ bị loại khỏi danh sách lưu."),
+            para("Đây là chế độ mới nhằm loại bỏ các bài báo không có sự tham gia của mục tiêu bảo vệ. Prompt yêu cầu Gemini chỉ đặt Is_Activity=true khi mục tiêu bảo vệ trực tiếp dự, chủ trì, phát biểu, làm việc, chỉ đạo, ký quyết định, được bổ nhiệm/miễn nhiệm hoặc là người chịu tác động chính của sự kiện. Các bài chỉ nhắc tên, dẫn bối cảnh, liệt kê chức danh, nói về cơ quan/người khác hoặc tiểu sử tĩnh sẽ bị loại khỏi danh sách lưu."),
             heading("6.3. Hậu kiểm kết quả Gemini", 2),
             para("Sau khi Gemini trả kết quả, hệ thống tiếp tục kiểm tra bằng các quy tắc bổ sung. Ví dụ: tin biến động chức vụ phải có từ khóa mạnh hoặc trường chức vụ/quyết định; nếu Matched_Target=false thì Is_Activity và Is_Change bị ép false; nếu tắt quét biến động chức vụ thì Is_Change bị loại khỏi kênh biến động."),
             page_break(),
@@ -388,11 +388,11 @@ def build_document() -> tuple[str, bool]:
     )
 
     feature_sections = [
-        ("7.1. Quản lý đối tượng và tiểu sử", "Người dùng có thể thêm, sửa, xóa đối tượng trực tiếp trên dashboard. Mỗi đối tượng có tên, chức vụ và tiểu sử. Tiểu sử giúp AI nhận diện đối tượng trong các trường hợp bài báo chỉ ghi chức danh hoặc có nhiều người tên gần giống. Trên trang chi tiết, tiểu sử không hiển thị trực tiếp mà được mở bằng nút Tiểu sử để giữ giao diện gọn."),
+        ("7.1. Quản lý mục tiêu bảo vệ và tiểu sử", "Người dùng có thể thêm, sửa, xóa mục tiêu bảo vệ trực tiếp trên dashboard. Mỗi mục tiêu bảo vệ có tên, chức vụ và tiểu sử. Tiểu sử giúp AI nhận diện mục tiêu bảo vệ trong các trường hợp bài báo chỉ ghi chức danh hoặc có nhiều người tên gần giống. Trên trang chi tiết, tiểu sử không hiển thị trực tiếp mà được mở bằng nút Tiểu sử để giữ giao diện gọn."),
         ("7.2. Quét thủ công và quét nền", "Quét thủ công được kích hoạt từ dashboard hoặc trang chi tiết. Quét nền do AutoScanner thực hiện theo chu kỳ. Cả hai cùng dùng chung lock để tránh chạy đồng thời. Khi đang quét, giao diện khóa các nút quét để tránh người dùng gửi thêm yêu cầu gây xung đột."),
         ("7.3. Quản lý tin không liên quan", "Trang chi tiết cho phép chọn nhiều bài và đánh dấu là không liên quan. Bài được gắn user_label=irrelevant sẽ chuyển sang tab Tin không liên quan. Người dùng vẫn có thể khôi phục nếu đánh dấu nhầm."),
-        ("7.4. Xuất JSON", "Người dùng có thể xuất dữ liệu chi tiết của từng đối tượng trong cửa sổ thời gian hiện tại ra JSON. Tính năng này hỗ trợ lưu trữ, đối chiếu hoặc sử dụng dữ liệu cho báo cáo khác."),
-        ("7.5. Telegram", "Khi bật Telegram, hệ thống gom tin mới theo đối tượng và gửi thành digest. Cơ chế chống trùng đảm bảo cùng một URL không bị gửi nhiều lần. Nếu nội dung dài, hệ thống chia thành nhiều tin để phù hợp giới hạn ký tự của Telegram."),
+        ("7.4. Xuất JSON", "Người dùng có thể xuất dữ liệu chi tiết của từng mục tiêu bảo vệ trong cửa sổ thời gian hiện tại ra JSON. Tính năng này hỗ trợ lưu trữ, đối chiếu hoặc sử dụng dữ liệu cho báo cáo khác."),
+        ("7.5. Telegram", "Khi bật Telegram, hệ thống gom tin mới theo mục tiêu bảo vệ và gửi thành digest. Cơ chế chống trùng đảm bảo cùng một URL không bị gửi nhiều lần. Nếu nội dung dài, hệ thống chia thành nhiều tin để phù hợp giới hạn ký tự của Telegram."),
     ]
     for title, text in feature_sections:
         body.append(heading(title, 2))
@@ -403,9 +403,9 @@ def build_document() -> tuple[str, bool]:
             page_break(),
             heading("CHƯƠNG 8. THIẾT KẾ GIAO DIỆN NGƯỜI DÙNG", 1),
             heading("8.1. Dashboard", 2),
-            para("Dashboard là màn hình vận hành chính. Thanh bên trái quản lý đối tượng và cài đặt. Khu vực trung tâm hiển thị các thẻ đối tượng, gồm tên, chức vụ, tiểu sử rút gọn, trạng thái và số lượng tin. Khu vực bên phải hiển thị trạng thái hệ thống, chu kỳ quét, lần quét cuối và tin mới nhất."),
-            heading("8.2. Trang chi tiết đối tượng", 2),
-            para("Trang chi tiết tập trung vào một đối tượng. Người dùng có thể xem thống kê tin, mở tiểu sử bằng nút riêng, xem tóm tắt, đọc danh sách hoạt động, đọc danh sách biến động chức vụ và quản lý các bài không liên quan. Cách tách tiểu sử ra nút riêng giúp trang không bị dài khi tiểu sử nhiều nội dung."),
+            para("Dashboard là màn hình vận hành chính. Thanh bên trái quản lý mục tiêu bảo vệ và cài đặt. Khu vực trung tâm hiển thị các thẻ mục tiêu bảo vệ, gồm tên, chức vụ, tiểu sử rút gọn, trạng thái và số lượng tin. Khu vực bên phải hiển thị trạng thái hệ thống, chu kỳ quét, lần quét cuối và tin mới nhất."),
+            heading("8.2. Trang chi tiết mục tiêu bảo vệ", 2),
+            para("Trang chi tiết tập trung vào một mục tiêu bảo vệ. Người dùng có thể xem thống kê tin, mở tiểu sử bằng nút riêng, xem tóm tắt, đọc danh sách hoạt động, đọc danh sách biến động chức vụ và quản lý các bài không liên quan. Cách tách tiểu sử ra nút riêng giúp trang không bị dài khi tiểu sử nhiều nội dung."),
             heading("8.3. Modal cài đặt", 2),
             para("Modal cài đặt gom các nhóm chức năng: phân tích và lọc, quét tự động, Telegram, danh sách báo chính thống và quản lý dữ liệu. Các lựa chọn được trình bày bằng thẻ, toggle, input số và nút hành động để người dùng thao tác nhanh."),
             page_break(),
@@ -435,9 +435,9 @@ def build_document() -> tuple[str, bool]:
             table(
                 [
                     ["Nhóm kiểm thử", "Nội dung cần kiểm tra"],
-                    ["Quản lý đối tượng", "Thêm, sửa, xóa tên/chức vụ/tiểu sử; kiểm tra config cập nhật đúng"],
-                    ["Quét tin", "Quét toàn bộ, quét riêng, quét nhóm đối tượng"],
-                    ["Chế độ AI", "So sánh keyword, participation, activity, full trên cùng một đối tượng"],
+                    ["Quản lý mục tiêu bảo vệ", "Thêm, sửa, xóa tên/chức vụ/tiểu sử; kiểm tra config cập nhật đúng"],
+                    ["Quét tin", "Quét toàn bộ, quét riêng, quét nhóm mục tiêu bảo vệ"],
+                    ["Chế độ AI", "So sánh keyword, participation, activity, full trên cùng một mục tiêu bảo vệ"],
                     ["Lọc báo", "Bật/tắt báo chính thống và kiểm tra số tin thay đổi"],
                     ["Trang chi tiết", "Mở tiểu sử, đánh dấu không liên quan, khôi phục, tải JSON"],
                     ["Telegram", "Gửi thử, gửi digest, chống gửi trùng"],
@@ -450,7 +450,7 @@ def build_document() -> tuple[str, bool]:
     add_bullets(
         body,
         [
-            "Hệ thống đã đáp ứng được mục tiêu giám sát tin tức theo danh sách đối tượng.",
+            "Hệ thống đã đáp ứng được mục tiêu giám sát tin tức theo danh sách mục tiêu bảo vệ.",
             "Chế độ participation giúp giảm bài không liên quan do chỉ nhắc tên.",
             "Dashboard và trang chi tiết đã đủ chức năng cho vận hành cơ bản.",
             "Cơ chế chống trùng URL và Telegram sent giúp hạn chế lặp dữ liệu và spam thông báo.",
@@ -477,7 +477,7 @@ def build_document() -> tuple[str, bool]:
             "Bổ sung đăng nhập, phân quyền hoặc token truy cập cho các API nhạy cảm.",
             "Tạo bộ kiểm thử tự động bằng pytest cho backend và Playwright cho giao diện.",
             "Tạo báo cáo định kỳ tự động theo ngày, tuần, tháng và xuất Word/PDF.",
-            "Chuẩn hóa tiểu sử đối tượng thành trường có cấu trúc: bí danh, chức vụ hiện tại, chức vụ cũ, tổ chức, địa phương.",
+            "Chuẩn hóa tiểu sử mục tiêu bảo vệ thành trường có cấu trúc: bí danh, chức vụ hiện tại, chức vụ cũ, tổ chức, địa phương.",
             "Thêm cơ chế học từ phản hồi người dùng: bài bị đánh dấu không liên quan có thể dùng để cải thiện prompt.",
             "Bổ sung dashboard thống kê theo nguồn báo, mức tin cậy AI và xu hướng hoạt động theo thời gian.",
         ],
@@ -487,28 +487,28 @@ def build_document() -> tuple[str, bool]:
         [
             page_break(),
             heading("KẾT LUẬN", 1),
-            para("Hệ thống giám sát tin tức followDirectorActivities đã giải quyết được bài toán theo dõi hoạt động và biến động chức vụ của nhiều đối tượng trên nguồn tin công khai. Hệ thống kết hợp thu thập tin, lọc nguồn, phân tích bằng AI, lưu dữ liệu, hiển thị dashboard và gửi thông báo Telegram trong một quy trình tương đối hoàn chỉnh."),
-            para("Về mặt kỹ thuật, chương trình có cấu trúc module rõ ràng, dễ bảo trì và đã được bổ sung nhiều chi tiết thực tế như chống trùng URL, cache decode, khóa quét nền, quản lý secret, tiểu sử đối tượng và chế độ AI lọc theo sự tham gia. Đây là nền tảng phù hợp để tiếp tục phát triển thành một công cụ vận hành ổn định hơn trong môi trường thực tế."),
+            para("Hệ thống giám sát tin tức followDirectorActivities đã giải quyết được bài toán theo dõi hoạt động và biến động chức vụ của nhiều mục tiêu bảo vệ trên nguồn tin công khai. Hệ thống kết hợp thu thập tin, lọc nguồn, phân tích bằng AI, lưu dữ liệu, hiển thị dashboard và gửi thông báo Telegram trong một quy trình tương đối hoàn chỉnh."),
+            para("Về mặt kỹ thuật, chương trình có cấu trúc module rõ ràng, dễ bảo trì và đã được bổ sung nhiều chi tiết thực tế như chống trùng URL, cache decode, khóa quét nền, quản lý secret, tiểu sử mục tiêu bảo vệ và chế độ AI lọc theo sự tham gia. Đây là nền tảng phù hợp để tiếp tục phát triển thành một công cụ vận hành ổn định hơn trong môi trường thực tế."),
             page_break(),
             heading("PHỤ LỤC A. DANH SÁCH API CHÍNH", 1),
             table(
                 [
                     ["Phương thức", "Endpoint", "Chức năng"],
                     ["GET", "/", "Mở dashboard"],
-                    ["GET", "/target", "Mở trang chi tiết đối tượng"],
-                    ["GET", "/api/targets", "Lấy danh sách đối tượng"],
-                    ["POST", "/config/targets/add", "Thêm hoặc sửa đối tượng"],
-                    ["POST", "/config/targets/delete", "Xóa đối tượng"],
+                    ["GET", "/target", "Mở trang chi tiết mục tiêu bảo vệ"],
+                    ["GET", "/api/targets", "Lấy danh sách mục tiêu bảo vệ"],
+                    ["POST", "/config/targets/add", "Thêm hoặc sửa mục tiêu bảo vệ"],
+                    ["POST", "/config/targets/delete", "Xóa mục tiêu bảo vệ"],
                     ["GET", "/api/settings", "Lấy cấu hình giao diện đã che secret"],
                     ["POST", "/api/settings", "Lưu cài đặt hệ thống"],
                     ["POST", "/monitor/run", "Bắt đầu quét"],
                     ["POST", "/monitor/cancel", "Hủy lượt quét đang chạy"],
                     ["GET", "/api/monitor/status", "Lấy trạng thái quét"],
-                    ["GET", "/api/target/detail", "Chi tiết một đối tượng"],
+                    ["GET", "/api/target/detail", "Chi tiết một mục tiêu bảo vệ"],
                     ["GET", "/api/target/export.json", "Xuất dữ liệu JSON"],
                 ]
             ),
-            heading("PHỤ LỤC B. DANH SÁCH ĐỐI TƯỢNG HIỆN CÓ", 1),
+            heading("PHỤ LỤC B. DANH SÁCH mục tiêu bảo vệ HIỆN CÓ", 1),
         ]
     )
     rows = [["STT", "Họ tên", "Chức vụ", "Có tiểu sử"]]

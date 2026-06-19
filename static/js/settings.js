@@ -101,11 +101,11 @@
     {
       id: "participation",
       label: "AI — có sự tham gia",
-      hint: "Chỉ giữ bài mà đúng đối tượng có tham gia/hành động/chủ trì/phát biểu hoặc là chủ thể chính.",
+      hint: "Chỉ giữ bài mà đúng mục tiêu bảo vệ có tham gia/hành động/chủ trì/phát biểu hoặc là chủ thể chính.",
     },
     {
       id: "activity",
-      label: "AI — hoạt động & đúng đối tượng",
+      label: "AI — hoạt động & đúng mục tiêu bảo vệ",
       hint: "Gemini lọc hoạt động và xác nhận đúng tên; không quét truy vấn bổ nhiệm/miễn nhiệm.",
     },
     {

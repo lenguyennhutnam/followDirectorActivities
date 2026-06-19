@@ -1,4 +1,4 @@
-"""Gửi thông báo Telegram — tin tổng hợp theo đối tượng."""
+"""Gửi thông báo Telegram — tin tổng hợp theo mục tiêu bảo vệ."""
 
 from __future__ import annotations
 
@@ -125,7 +125,7 @@ _TELEGRAM_SAFE_LEN = 4080
 
 
 def _split_digest_block(block: str, max_len: int) -> List[str]:
-    """Chia một block đối tượng nếu quá dài — không cắt giữa từng bài."""
+    """Chia một block mục tiêu bảo vệ nếu quá dài — không cắt giữa từng bài."""
     block = block.strip()
     if not block or len(block) <= max_len:
         return [block] if block else []
@@ -445,7 +445,7 @@ def notify_records(
     scan_id: str = "",
 ) -> Dict[str, Any]:
     """
-    Gửi Telegram theo đối tượng:
+    Gửi Telegram theo mục tiêu bảo vệ:
     - Có tin MỚI lần này (chưa gửi URL) → báo cáo đầy đủ
     - Đã có hoạt động cũ, không tin mới → không gửi (tránh spam)
     - Không hoạt động / biến động trong cửa sổ → tin trống (một lần đến khi có tin mới)
@@ -500,7 +500,7 @@ def notify_records(
             targets_order.append(name)
 
     if not targets_order:
-        print("  [TELEGRAM] không có đối tượng trong config")
+        print("  [TELEGRAM] không có mục tiêu bảo vệ trong config")
         return {**result, "enabled": True}
 
     h_label = int(hours) if hours == int(hours) else hours

@@ -146,7 +146,7 @@ def main() -> int:
 
     wl = PressWhitelist.from_file(str(CHINH_THONG_PATH))
     doms = _domains(wl)
-    print(f"Đối tượng thử: {target.name}")
+    print(f"mục tiêu bảo vệ thử: {target.name}")
     print(f"Báo chính thống: {len(doms)} domain — {', '.join(doms)}")
     print(f"max_results_per_target={max_results}, language={language}, country={country}\n")
 
@@ -193,7 +193,7 @@ def main() -> int:
         if fastest[0].startswith("Hien"):
             print("Kết luận: Giữ cách hiện tại — site: không nhanh hơn đáng kể.")
         else:
-            print("Kết luận: Có thể cân nhắc tích hợp cách site: (cần thử thêm trên nhiều đối tượng).")
+            print("Kết luận: Có thể cân nhắc tích hợp cách site: (cần thử thêm trên nhiều mục tiêu bảo vệ).")
     return 0
 
 

@@ -52,7 +52,7 @@ flowchart TB
   subgraph UI["👤 NGƯỜI DÙNG — Trình duyệt"]
     direction TB
     DASH["📊 Dashboard<br/>KPI · Quét tất cả<br/><i>khóa khi đang quét</i>"]
-    DETAIL["🔍 Chi tiết đối tượng"]
+    DETAIL["🔍 Chi tiết mục tiêu bảo vệ"]
     SETMOD["⚙️ Cài đặt<br/>3 chế độ AI · báo · Telegram"]
     API["🔌 REST API"]
     POLL["🔄 Poll status"]
@@ -84,7 +84,7 @@ flowchart TB
   SYNC["🎯 ensure_ai_scan_sync<br/>đọc ai_scan_mode"]
   SYNC --> LOOP
 
-  LOOP["🔁 Lặp từng đối tượng"]
+  LOOP["🔁 Lặp từng mục tiêu bảo vệ"]
   LOOP --> MODES
   LOOP --> COLLECT
 
@@ -139,7 +139,7 @@ flowchart TB
     PASS -->|Không| SKIPHIST --> MORE
     PASS -->|Có| UPSERT --> CHHD --> MORE
     UPSERT --> CHBDY --> MORE
-    MORE{{"Còn<br/>đối tượng?"}}
+    MORE{{"Còn<br/>mục tiêu bảo vệ?"}}
     MORE -->|Có| LOOP
     MORE -->|Hết| DISP
   end

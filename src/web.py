@@ -113,7 +113,7 @@ def api_get_targets():
 
 @app.get("/config")
 def get_config():
-    """Tương thích — không trả secret; ưu tiên GET /api/targets cho danh sách đối tượng."""
+    """Tương thích — không trả secret; ưu tiên GET /api/targets cho danh sách mục tiêu bảo vệ."""
     cfg = read_json(CONFIG_PATH, default={})
     if not isinstance(cfg, dict):
         cfg = {}
@@ -129,7 +129,7 @@ def _save_target_in_config(
     position: str = "",
     bio: str = "",
 ) -> tuple[Dict[str, Any], str | None]:
-    """Cập nhật hoặc thêm đối tượng trong config. Trả về (cfg, lỗi)."""
+    """Cập nhật hoặc thêm mục tiêu bảo vệ trong config. Trả về (cfg, lỗi)."""
     targets = cfg.get("targets", [])
     if not isinstance(targets, list):
         targets = []
@@ -146,11 +146,11 @@ def _save_target_in_config(
                 idx = i
                 break
         if idx is None:
-            return cfg, f"Không tìm thấy đối tượng: {old}"
+            return cfg, f"Không tìm thấy mục tiêu bảo vệ: {old}"
         if new != old:
             for t in targets:
                 if isinstance(t, dict) and str(t.get("name", "")).strip() == new:
-                    return cfg, f"Đã tồn tại đối tượng: {new}"
+                    return cfg, f"Đã tồn tại mục tiêu bảo vệ: {new}"
         old_pos = ""
         old_bio = ""
         if isinstance(targets[idx], dict):
@@ -182,7 +182,7 @@ def add_target():
     position = str(data.get("position", "")).strip()
     bio = str(data.get("bio", "")).strip()
     if not name:
-        return jsonify({"success": False, "error": "Thiếu tên đối tượng"}), 400
+        return jsonify({"success": False, "error": "Thiếu tên mục tiêu bảo vệ"}), 400
 
     cfg = read_json(CONFIG_PATH, default={})
     if not isinstance(cfg, dict):
@@ -688,7 +688,7 @@ def api_data_clear():
 
 @app.post("/monitor/cancel")
 def monitor_cancel():
-    """Hủy lượt quét đang chạy — dừng sau khi đối tượng hiện tại xong."""
+    """Hủy lượt quét đang chạy — dừng sau khi mục tiêu bảo vệ hiện tại xong."""
     cancelled = _AUTO_SCANNER.request_cancel()
     if not cancelled:
         return jsonify({"success": False, "error": "Không có lượt quét nào đang chạy"}), 409
@@ -722,7 +722,7 @@ def monitor_run():
             ignore_history = as_bool(body.get("ignore_history"), True)
         st = _AUTO_SCANNER.get_status()
         if st.get("is_scanning"):
-            who = target_name or (f"{len(target_names)} đối tượng" if target_names else "tất cả đối tượng")
+            who = target_name or (f"{len(target_names)} mục tiêu bảo vệ" if target_names else "tất cả mục tiêu bảo vệ")
             print(
                 f"[MANUAL] Từ chối quét ({who}) — đang có lượt quét khác",
                 flush=True,
@@ -735,7 +735,7 @@ def monitor_run():
                 }
             ), 409
 
-        who = target_name or (f"{len(target_names)} đối tượng" if target_names else "tất cả đối tượng")
+        who = target_name or (f"{len(target_names)} mục tiêu bảo vệ" if target_names else "tất cả mục tiêu bảo vệ")
         print(f"[MANUAL] Yêu cầu quét ({who}) — bắt đầu…", flush=True)
 
         def _manual_scan() -> None:
