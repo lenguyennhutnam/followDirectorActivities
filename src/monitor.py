@@ -22,6 +22,7 @@ if sys.platform == "win32":
 import google.generativeai as genai
 
 from src.json_io import read_json, write_json
+from src.secrets import apply_runtime_secrets
 from src.paths import (
     CHINH_THONG_PATH,
     CONFIG_PATH,
@@ -212,6 +213,7 @@ _ACTIVITY_ROUTINE = re.compile(
 class Target:
     name: str
     position: str = ""
+    bio: str = ""
 
 
 def load_config() -> Dict[str, Any]:
@@ -261,6 +263,17 @@ AI_SCAN_PROFILES: Dict[str, Dict[str, Any]] = {
         "use_gemini": False,
         "ai_verify_target": False,
         "scan_role_change": False,
+        "require_activity": False,
+        "strict_participation": False,
+    },
+    "participation": {
+        "label": "AI — có sự tham gia",
+        "hint": "Gemini chỉ giữ bài mà đúng đối tượng có tham gia/hành động/phát biểu/chủ trì/dự hoặc là người được bổ nhiệm/miễn nhiệm.",
+        "use_gemini": True,
+        "ai_verify_target": True,
+        "scan_role_change": False,
+        "require_activity": True,
+        "strict_participation": True,
     },
     "activity": {
         "label": "AI — hoạt động & đúng đối tượng",
@@ -268,6 +281,8 @@ AI_SCAN_PROFILES: Dict[str, Dict[str, Any]] = {
         "use_gemini": True,
         "ai_verify_target": True,
         "scan_role_change": False,
+        "require_activity": True,
+        "strict_participation": False,
     },
     "full": {
         "label": "AI — đầy đủ (cả biến động chức vụ)",
@@ -275,6 +290,8 @@ AI_SCAN_PROFILES: Dict[str, Dict[str, Any]] = {
         "use_gemini": True,
         "ai_verify_target": True,
         "scan_role_change": True,
+        "require_activity": True,
+        "strict_participation": False,
     },
     "open": {
         "label": "AI — không lọc đối tượng (cũ)",
@@ -282,13 +299,15 @@ AI_SCAN_PROFILES: Dict[str, Dict[str, Any]] = {
         "use_gemini": True,
         "ai_verify_target": False,
         "scan_role_change": False,
+        "require_activity": True,
+        "strict_participation": False,
     },
 }
 
-AI_SCAN_UI_MODES = ("keyword", "activity", "full")
+AI_SCAN_UI_MODES = ("keyword", "participation", "activity", "full")
 
 
-def _gn_flags_snapshot(gn: Dict[str, Any]) -> Tuple[bool, bool, bool]:
+def _gn_flags_snapshot(gn: Dict[str, Any]) -> Tuple[bool, bool, bool, bool, bool]:
     use_g = _gn_bool(gn.get("use_gemini_analysis", gn.get("use_ai", True)), True)
     verify = (
         _gn_bool(gn.get("ai_verify_target"), True)
@@ -300,18 +319,30 @@ def _gn_flags_snapshot(gn: Dict[str, Any]) -> Tuple[bool, bool, bool]:
         if "scan_role_change" in gn
         else True
     )
-    return use_g, verify, role
+    require_activity = (
+        _gn_bool(gn.get("ai_require_activity"), True)
+        if "ai_require_activity" in gn
+        else True
+    )
+    strict_participation = (
+        _gn_bool(gn.get("ai_strict_participation"), False)
+        if "ai_strict_participation" in gn
+        else False
+    )
+    return use_g, verify, role, require_activity, strict_participation
 
 
 def detect_ai_scan_mode(cfg: Optional[Dict[str, Any]] = None) -> str:
     """Suy ra chế độ từ các cờ trong config (tương thích bản cũ)."""
     data = cfg if cfg is not None else load_config()
     gn = data.get("google_news") if isinstance(data.get("google_news"), dict) else {}
-    use_g, verify, role = _gn_flags_snapshot(gn)
+    use_g, verify, role, require_activity, strict_participation = _gn_flags_snapshot(gn)
     if not use_g:
         return "keyword"
     if role:
         return "full"
+    if verify and require_activity and strict_participation:
+        return "participation"
     if verify:
         return "activity"
     return "open"
@@ -327,6 +358,8 @@ def apply_ai_scan_mode(gn: Dict[str, Any], mode: str) -> str:
     gn["use_ai"] = prof["use_gemini"]
     gn["ai_verify_target"] = prof["ai_verify_target"]
     gn["scan_role_change"] = prof["scan_role_change"]
+    gn["ai_require_activity"] = prof["require_activity"]
+    gn["ai_strict_participation"] = prof["strict_participation"]
     gn["ai_scan_mode"] = key
     return key
 
@@ -335,11 +368,13 @@ def _flags_match_profile(gn: Dict[str, Any], mode: str) -> bool:
     if mode not in AI_SCAN_PROFILES:
         return False
     prof = AI_SCAN_PROFILES[mode]
-    use_g, verify, role = _gn_flags_snapshot(gn)
+    use_g, verify, role, require_activity, strict_participation = _gn_flags_snapshot(gn)
     return (
         use_g == prof["use_gemini"]
         and verify == prof["ai_verify_target"]
         and role == prof["scan_role_change"]
+        and require_activity == prof["require_activity"]
+        and strict_participation == prof["strict_participation"]
     )
 
 
@@ -378,6 +413,8 @@ def resolve_ai_scan_options(cfg: Optional[Dict[str, Any]] = None) -> Dict[str, A
         "use_gemini": bool(prof["use_gemini"]),
         "ai_verify_target": bool(prof["ai_verify_target"]),
         "scan_role_change": bool(prof["scan_role_change"]),
+        "require_activity": bool(prof["require_activity"]),
+        "strict_participation": bool(prof["strict_participation"]),
     }
 
 
@@ -417,11 +454,11 @@ def build_keyword_only_ai_result(
 
 
 def _article_passes_ai_filters(
-    ai_result: Dict[str, Any], *, verify_target: bool
+    ai_result: Dict[str, Any], *, verify_target: bool, require_activity: bool = True
 ) -> bool:
-    if not ai_result.get("Is_Activity"):
-        return False
     if verify_target and not ai_result.get("Matched_Target"):
+        return False
+    if require_activity and not ai_result.get("Is_Activity"):
         return False
     return True
 
@@ -566,7 +603,9 @@ def record_matches_ai_display_mode(
     if ai.get("AI_Disabled") or ai.get("Source") == "keyword_scan":
         return False
     return _article_passes_ai_filters(
-        ai, verify_target=bool(ai_opts.get("ai_verify_target"))
+        ai,
+        verify_target=bool(ai_opts.get("ai_verify_target")),
+        require_activity=bool(ai_opts.get("require_activity", True)),
     )
 
 
@@ -667,11 +706,12 @@ def save_history(history_urls: List[str]) -> None:
     write_json(HISTORY_PATH, history_urls)
 
 
-def update_target_identity(old_name: str, new_name: str, position: str) -> None:
-    """Đổi tên/chức vụ đối tượng trong notifications và history."""
+def update_target_identity(old_name: str, new_name: str, position: str, bio: str = "") -> None:
+    """Đổi tên/chức vụ/tiểu sử đối tượng trong notifications và history."""
     old = str(old_name or "").strip()
     new = str(new_name or "").strip()
     pos = str(position or "").strip()
+    bio_text = str(bio or "").strip()
     if not old or not new:
         return
 
@@ -687,6 +727,7 @@ def update_target_identity(old_name: str, new_name: str, position: str) -> None:
                 continue
             row["target_name"] = new
             row["target_position"] = pos
+            row["target_bio"] = bio_text
     save_notifications(notifs)
 
     if old != new:
@@ -835,6 +876,7 @@ def call_gemini_for_change(
     *,
     news_kind: str = "hoatdong",
     allow_role_change: bool = True,
+    strict_participation: bool = False,
 ) -> Dict[str, Any]:
     genai.configure(api_key=gemini_api_key)
 
@@ -843,6 +885,7 @@ def call_gemini_for_change(
     url = article.get("url", "")
 
     position_ref = target.position.strip() if isinstance(target.position, str) else ""
+    bio_ref = target.bio.strip() if isinstance(target.bio, str) else ""
     position_or_default = position_ref or "chức vụ"
     kind = str(news_kind or "hoatdong").strip()
     kind_hint = (
@@ -852,12 +895,22 @@ def call_gemini_for_change(
         else "Bài tìm qua truy vấn HOẠT ĐỘNG — Is_Change=true rất hiếm; "
         "họp, thăm, phát biểu, làm việc KHÔNG phải đổi chức vụ."
     )
+    participation_rule = (
+        "CHẾ ĐỘ LỌC CÓ SỰ THAM GIA (bắt buộc):\n"
+        "- Is_Activity=true chỉ khi {name} trực tiếp tham gia hoặc là chủ thể trong bài: "
+        "dự, chủ trì, phát biểu, làm việc, thăm, kiểm tra, chỉ đạo, ký/ban hành quyết định, "
+        "được bổ nhiệm/miễn nhiệm/điều động, hoặc là người chịu tác động chính của sự kiện.\n"
+        "- Is_Activity=false nếu bài chỉ nhắc tên {name} để dẫn bối cảnh, so sánh, liệt kê chức danh, "
+        "nói về cơ quan/địa phương/người khác, hồ sơ/tiểu sử tĩnh, nhận định chung, hoặc sự kiện không có {name} tham gia.\n\n"
+        if strict_participation
+        else ""
+    )
 
     prompt = (
         "Bạn là hệ thống phân tích tin tức. "
 
         "Hãy đọc bài báo sau và chỉ xét đúng đối tượng: {name} (không suy rộng sang người khác). "
-        "Nếu bài KHÔNG nói về hoạt động/việc làm của đối tượng đó, hãy loại bài đó.\n\n"
+        "Luôn xác định Matched_Target trước; đừng đặt Matched_Target=false chỉ vì bài không phải hoạt động.\n\n"
         "Ngữ cảnh truy vấn: {kind_hint}\n\n"
         "QUY TẮC Matched_Target (rất quan trọng):\n"
         "- Matched_Target=true CHỈ KHI bài nói TRỰC TIẾP về {name} — là nhân vật chính, người hành động, hoặc người được bổ nhiệm/miễn nhiệm.\n"
@@ -870,14 +923,17 @@ def call_gemini_for_change(
         "- Matched_Target=false nếu không đủ căn cứ xác định là {name} (bài chung chung nhiều lãnh đạo).\n\n"
         "QUY TẮC Is_Activity:\n"
         "- Is_Activity=true khi bài nói việc {name} đang làm (họp, thăm, chủ trì, phát biểu…).\n"
+        "- Nếu bài nói đúng {name} nhưng chỉ là nhắc tên, hồ sơ, nhận định, tiểu sử, hoặc tin nền thì Matched_Target=true và Is_Activity=false.\n"
         "- Không nhầm bài chủ yếu về người/cơ quan khác.\n\n"
+        "{participation_rule}"
         "QUY TẮC Is_Change:\n"
         "- Is_Change=true CHỈ KHI có thông tin RÕ về thay đổi chức vụ/việc làm của đúng {name} "
         "(bổ nhiệm, miễn nhiệm, điều động, bổ nhiệm giữ chức, quyết định giao nhiệm vụ mới…).\n"
         "- Không coi họp, phát biểu, thăm hỏi, hoạt động thường nhật là đổi chức vụ.\n"
         "- Bắt buộc điền From_Position hoặc To_Position hoặc Decision_Text nếu Is_Change=true; "
         "thiếu cả ba => Is_Change=false.\n\n"
-        "Đối tượng: {name}. Chức vụ tham chiếu: {position_ref}.\n\n"
+        "Đối tượng: {name}. Chức vụ tham chiếu: {position_ref}.\n"
+        "Tiểu sử/ngữ cảnh nhận diện: {bio_ref}\n\n"
         "Bài báo:\n"
         "- Tiêu đề: {title}\n"
         "- Mô tả: {description}\n"
@@ -903,6 +959,8 @@ def call_gemini_for_change(
     ).format(
         name=target.name,
         position_ref=position_ref,
+        bio_ref=bio_ref or "Không có",
+        participation_rule=participation_rule.format(name=target.name),
         position_or_default=position_or_default,
         kind_hint=kind_hint.format(name=target.name),
         title=title,
@@ -910,7 +968,7 @@ def call_gemini_for_change(
         url=url,
     )
 
-    cfg = load_config()
+    cfg = apply_runtime_secrets(load_config())
     from_cfg = str(cfg.get("gemini_model") or "").strip()
     preferred = str(os.environ.get("GEMINI_MODEL", "")).strip() or from_cfg
     candidate_models = [preferred, "gemini-2.5-flash", "gemini-1.5-flash"]
@@ -1343,6 +1401,7 @@ def _process_gemini_batch(
     *,
     gemini_workers: int,
     allow_role_change: bool = True,
+    strict_participation: bool = False,
 ) -> Tuple[List[Tuple[Dict[str, Any], str, Dict[str, Any]]], List[str]]:
     """Gọi Gemini song song; trả (kết quả, danh sách lỗi)."""
     if not pending:
@@ -1360,6 +1419,7 @@ def _process_gemini_batch(
             art,
             news_kind=kind,
             allow_role_change=allow_role_change,
+            strict_participation=strict_participation,
         )
         return art, kind, ai
 
@@ -1402,7 +1462,7 @@ def process_once(
     cancel_fn: Optional[Any] = None,
 ) -> Dict[str, Any]:
     """Mỗi lượt quét đọc lại config.json — chế độ AI theo ai_scan_mode người dùng đã chọn."""
-    cfg = load_config()
+    cfg = apply_runtime_secrets(load_config())
     gn = cfg.get("google_news") if isinstance(cfg.get("google_news"), dict) else {}
     if not isinstance(gn, dict):
         gn = {}
@@ -1418,10 +1478,12 @@ def process_once(
     use_gemini = ai_opts["use_gemini"]
     verify_target = ai_opts["ai_verify_target"]
     scan_role_change = ai_opts["scan_role_change"]
+    require_activity = ai_opts["require_activity"]
+    strict_participation = ai_opts["strict_participation"]
     ai_mode = ai_opts["mode"]
     gemini_key = str(cfg.get("gemini_api_key") or "").strip()
     if use_gemini and not gemini_key:
-        raise ValueError("Thiếu gemini_api_key trong config.json")
+        raise ValueError("Thiếu gemini_api_key trong config.json hoặc GEMINI_API_KEY/.env")
     if not use_gemini:
         print(
             "[SCAN] Tắt phân tích Gemini — hiển thị/lưu mọi tin Google News & RSS trả về "
@@ -1439,6 +1501,10 @@ def process_once(
         )
     if not scan_role_change and use_gemini:
         print("  → Không quét truy vấn bổ nhiệm/miễn nhiệm, không lưu kênh biendong")
+    if use_gemini and not require_activity:
+        print("  → Chỉ yêu cầu đúng đối tượng; không bắt buộc bài là hoạt động")
+    if use_gemini and strict_participation:
+        print("  → Lọc chặt: chỉ lưu bài có sự tham gia/hành động của đúng đối tượng")
 
     language = str(gn.get("language") or "vi")
     country = str(gn.get("country") or "VN")
@@ -1457,7 +1523,13 @@ def process_once(
             continue
         name = str(t.get("name", "")).strip()
         if name:
-            targets.append(Target(name=name, position=str(t.get("position", ""))))
+            targets.append(
+                Target(
+                    name=name,
+                    position=str(t.get("position", "")),
+                    bio=str(t.get("bio", "")),
+                )
+            )
 
     filter_name = str(target_name or "").strip()
     filter_names = [str(n).strip() for n in (target_names or []) if str(n).strip()]
@@ -1554,6 +1626,7 @@ def process_once(
                 to_analyze,
                 gemini_workers=perf["gemini_workers"],
                 allow_role_change=scan_role_change,
+                strict_participation=strict_participation,
             )
             ai_errors.extend(batch_errors)
         else:
@@ -1577,7 +1650,11 @@ def process_once(
                 f"kind={news_kind} verify_target={verify_target}"
             )
 
-            if not _article_passes_ai_filters(ai_result, verify_target=verify_target):
+            if not _article_passes_ai_filters(
+                ai_result,
+                verify_target=verify_target,
+                require_activity=require_activity,
+            ):
                 scan_results.append({"url": url, "skipped": True, "ai_result": ai_result})
                 continue
 
@@ -1585,6 +1662,7 @@ def process_once(
                 "timestamp": now_iso,
                 "target_name": target.name,
                 "target_position": target.position,
+                "target_bio": target.bio,
                 "title": art.get("title", ""),
                 "description": art.get("description", "") or "",
                 "url": url,

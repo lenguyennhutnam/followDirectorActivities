@@ -1,0 +1,42 @@
+{
+  "gemini_api_key": "",
+  "gemini_model": "gemini-2.5-flash",
+  "auto_scan_enabled": false,
+  "scan_interval_minutes": 120,
+  "ui_refresh_seconds": 30,
+  "google_news": {
+    "language": "vi",
+    "country": "VN",
+    "max_results_per_target": 30,
+    "filter_chinh_thong_only": false,
+    "use_rss_feeds": true,
+    "rss_max_per_feed": 40,
+    "decode_workers": 4,
+    "gemini_workers": 3,
+    "decode_interval": 0.15,
+    "activity_report_hours": 24,
+    "role_change_report_hours": 168,
+    "search_match_mode": "exact",
+    "use_gemini_analysis": false,
+    "use_ai": false,
+    "ai_verify_target": false,
+    "ai_require_activity": false,
+    "ai_strict_participation": false,
+    "scan_role_change": false,
+    "ai_scan_mode": "keyword"
+  },
+  "targets": [
+    {
+      "name": "Ten doi tuong",
+      "position": "Chuc vu tham chieu",
+      "bio": "Tieu su ngan hoac thong tin nhan dien"
+    }
+  ],
+  "telegram": {
+    "enabled": false,
+    "bot_token": "",
+    "chat_id": "",
+    "notify_role_change_only": false,
+    "notify_on_empty": false
+  }
+}

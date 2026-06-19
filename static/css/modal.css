@@ -103,6 +103,17 @@
   line-height: 1.35;
 }
 
+.card-sub-bio {
+  margin: 6px 0 0;
+  font-size: 0.76rem;
+  color: var(--muted-2);
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 .badge-new {
   display: inline-block;
   margin-top: 6px;
@@ -828,6 +839,30 @@ html[data-theme="light"] .inp-select {
   font-size: 0.78rem;
   color: var(--muted);
   margin-top: 8px;
+}
+
+.detail-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.detail-bio-block[hidden] { display: none; }
+
+.detail-bio-block .block-hd {
+  justify-content: flex-start;
+}
+
+.detail-bio-block .block-hd #btnCloseBio {
+  margin-left: auto;
+}
+
+.detail-bio-text {
+  color: var(--text);
+  font-size: 0.92rem;
+  line-height: 1.7;
+  white-space: pre-line;
 }
 
 .stat-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }

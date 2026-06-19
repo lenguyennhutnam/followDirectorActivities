@@ -1,5 +1,9 @@
 # Không đẩy key API / token lên Git
+.env
+.env.*
+!.env.example
 config/config.json
+Phan_mem/config/config.json
 
 # Python
 __pycache__/
@@ -7,8 +11,10 @@ __pycache__/
 .venv/
 venv/
 
-# Dữ liệu runtime (tùy chọn — bỏ comment nếu không muốn commit data)
-# data/
+# Dữ liệu runtime
+data/
+Phan_mem/data/
+event_intelligence/.cache/
 
 # claude code
 .claude

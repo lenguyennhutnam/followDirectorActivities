@@ -22,6 +22,13 @@ from src.auto_scanner import get_auto_scanner
 from src.data_store import TIME_RANGE_OPTIONS, clear_data, get_data_stats
 from src.common import as_bool
 from src.json_io import read_json, write_json
+from src.secrets import (
+    apply_runtime_secrets,
+    is_configured_secret,
+    is_placeholder,
+    redact_config,
+    set_local_secret,
+)
 from src.telegram_notify import send_test_message
 from src.paths import (
     CHINH_THONG_PATH,
@@ -60,8 +67,10 @@ def _ensure_telegram(cfg: Dict[str, Any]) -> Dict[str, Any]:
 def _telegram_settings_payload(tg: Dict[str, Any]) -> Dict[str, Any]:
     return {
         "enabled": as_bool(tg.get("enabled"), False),
-        "bot_token": str(tg.get("bot_token") or ""),
-        "chat_id": str(tg.get("chat_id") or ""),
+        "bot_token": "",
+        "bot_token_configured": is_configured_secret(tg.get("bot_token")),
+        "chat_id": "",
+        "chat_id_configured": is_configured_secret(tg.get("chat_id")),
         "notify_role_change_only": as_bool(tg.get("notify_role_change_only"), False),
         "notify_on_empty": as_bool(tg.get("notify_on_empty"), False),
     }
@@ -74,15 +83,7 @@ def _targets_list(cfg: Dict[str, Any]) -> list:
 
 def _sanitize_config(cfg: Dict[str, Any]) -> Dict[str, Any]:
     """Config công khai — không trả API key / token Telegram."""
-    out = dict(cfg)
-    if out.get("gemini_api_key"):
-        out["gemini_api_key"] = "(đã cấu hình)"
-    tg = out.get("telegram")
-    if isinstance(tg, dict):
-        tg = dict(tg)
-        if tg.get("bot_token"):
-            tg["bot_token"] = "(đã cấu hình)"
-        out["telegram"] = tg
+    out = redact_config(cfg)
     gn = out.get("google_news")
     if isinstance(gn, dict):
         gn = dict(gn)
@@ -126,6 +127,7 @@ def _save_target_in_config(
     original_name: str = "",
     name: str = "",
     position: str = "",
+    bio: str = "",
 ) -> tuple[Dict[str, Any], str | None]:
     """Cập nhật hoặc thêm đối tượng trong config. Trả về (cfg, lỗi)."""
     targets = cfg.get("targets", [])
@@ -135,6 +137,7 @@ def _save_target_in_config(
     old = str(original_name or "").strip()
     new = str(name or "").strip()
     pos = str(position or "").strip()
+    bio_text = str(bio or "").strip()
 
     if old:
         idx = None
@@ -149,21 +152,24 @@ def _save_target_in_config(
                 if isinstance(t, dict) and str(t.get("name", "")).strip() == new:
                     return cfg, f"Đã tồn tại đối tượng: {new}"
         old_pos = ""
+        old_bio = ""
         if isinstance(targets[idx], dict):
             old_pos = str(targets[idx].get("position", "")).strip()
-        targets[idx] = {"name": new, "position": pos}
+            old_bio = str(targets[idx].get("bio", "")).strip()
+        targets[idx] = {"name": new, "position": pos, "bio": bio_text}
         cfg["targets"] = targets
-        if new != old or pos != old_pos:
-            monitor.update_target_identity(old, new, pos)
+        if new != old or pos != old_pos or bio_text != old_bio:
+            monitor.update_target_identity(old, new, pos, bio_text)
         return cfg, None
 
     for t in targets:
         if isinstance(t, dict) and str(t.get("name", "")).strip() == new:
             t["position"] = pos
+            t["bio"] = bio_text
             cfg["targets"] = targets
             return cfg, None
 
-    targets.append({"name": new, "position": pos})
+    targets.append({"name": new, "position": pos, "bio": bio_text})
     cfg["targets"] = targets
     return cfg, None
 
@@ -174,6 +180,7 @@ def add_target():
     original_name = str(data.get("original_name", "")).strip()
     name = str(data.get("name", "")).strip()
     position = str(data.get("position", "")).strip()
+    bio = str(data.get("bio", "")).strip()
     if not name:
         return jsonify({"success": False, "error": "Thiếu tên đối tượng"}), 400
 
@@ -181,13 +188,13 @@ def add_target():
     if not isinstance(cfg, dict):
         cfg = {}
     cfg, err = _save_target_in_config(
-        cfg, original_name=original_name, name=name, position=position
+        cfg, original_name=original_name, name=name, position=position, bio=bio
     )
     if err:
         return jsonify({"success": False, "error": err}), 404 if original_name else 400
 
     write_json(CONFIG_PATH, cfg)
-    return jsonify({"success": True, "config": cfg, "message": "Đã lưu"})
+    return jsonify({"success": True, "config": _sanitize_config(cfg), "message": "Đã lưu"})
 
 
 @app.post("/config/targets/delete")
@@ -207,7 +214,7 @@ def delete_target():
         t for t in targets if not (isinstance(t, dict) and str(t.get("name", "")).strip() == name)
     ]
     write_json(CONFIG_PATH, cfg)
-    return jsonify({"success": True, "config": cfg})
+    return jsonify({"success": True, "config": _sanitize_config(cfg)})
 
 
 def _notifications_for_display() -> Dict[str, Any]:
@@ -293,6 +300,19 @@ def api_target_detail():
         monitor.load_notifications(), cfg
     )
     detail = monitor.collect_target_detail(notifs, name, hours, gn=gn)
+    target = next(
+        (
+            t
+            for t in (cfg.get("targets") or [])
+            if isinstance(t, dict) and str(t.get("name", "")).strip() == name
+        ),
+        {},
+    )
+    detail["target_profile"] = {
+        "name": name,
+        "position": str(target.get("position") or "").strip() if isinstance(target, dict) else "",
+        "bio": str(target.get("bio") or "").strip() if isinstance(target, dict) else "",
+    }
     return jsonify({"success": True, **detail})
 
 
@@ -314,9 +334,19 @@ def api_target_export_json():
         monitor.load_notifications(), cfg
     )
     detail = monitor.collect_target_detail(notifs, name, hours, gn=gn)
+    target = next(
+        (
+            t
+            for t in (cfg.get("targets") or [])
+            if isinstance(t, dict) and str(t.get("name", "")).strip() == name
+        ),
+        {},
+    )
     payload = {
         "exported_at": datetime.now(timezone.utc).isoformat(),
         "target_name": name,
+        "target_position": str(target.get("position") or "").strip() if isinstance(target, dict) else "",
+        "target_bio": str(target.get("bio") or "").strip() if isinstance(target, dict) else "",
         "hours": hours,
         **detail,
     }
@@ -335,7 +365,8 @@ def api_get_settings():
     if not isinstance(cfg, dict):
         cfg = {}
     gn = _ensure_gn(cfg)
-    tg = _ensure_telegram(cfg)
+    runtime_cfg = apply_runtime_secrets(cfg)
+    tg = _ensure_telegram(runtime_cfg)
     press = read_json(CHINH_THONG_PATH, default=[])
     if not isinstance(press, list):
         press = []
@@ -465,9 +496,15 @@ def api_save_settings():
     if "enabled" in data:
         tg["enabled"] = as_bool(data.get("enabled"), False)
     if "bot_token" in data:
-        tg["bot_token"] = str(data.get("bot_token") or "").strip()
+        token = str(data.get("bot_token") or "").strip()
+        if token and not is_placeholder(token):
+            set_local_secret("TELEGRAM_BOT_TOKEN", token)
+            tg["bot_token"] = ""
     if "chat_id" in data:
-        tg["chat_id"] = str(data.get("chat_id") or "").strip()
+        chat_id = str(data.get("chat_id") or "").strip()
+        if chat_id and not is_placeholder(chat_id):
+            set_local_secret("TELEGRAM_CHAT_ID", chat_id)
+            tg["chat_id"] = ""
     if "notify_role_change_only" in data:
         tg["notify_role_change_only"] = as_bool(data.get("notify_role_change_only"), False)
     if "notify_on_empty" in data:
@@ -569,7 +606,7 @@ def api_save_settings():
             "ai_scan_mode_label": ai_opts["label"],
             "scan_started": scan_started,
             "rescan_started": rescan_started,
-            "config": cfg,
+            "config": _sanitize_config(cfg),
         }
     )
 
@@ -580,6 +617,7 @@ def api_telegram_test():
     cfg = read_json(CONFIG_PATH, default={})
     if not isinstance(cfg, dict):
         cfg = {}
+    cfg = apply_runtime_secrets(cfg)
     tg = _ensure_telegram(cfg)
     if data.get("bot_token"):
         tg["bot_token"] = str(data.get("bot_token")).strip()

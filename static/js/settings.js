@@ -87,6 +87,7 @@
 
   const AI_MODE_ICONS = {
     keyword: "text-search",
+    participation: "user-search",
     activity: "user-check",
     full: "briefcase",
   };
@@ -96,6 +97,11 @@
       id: "keyword",
       label: "Từ khóa (không Gemini)",
       hint: "Lưu tin theo truy vấn Google News/RSS, không gọi AI, không kênh biến động.",
+    },
+    {
+      id: "participation",
+      label: "AI — có sự tham gia",
+      hint: "Chỉ giữ bài mà đúng đối tượng có tham gia/hành động/chủ trì/phát biểu hoặc là chủ thể chính.",
     },
     {
       id: "activity",
@@ -363,8 +369,20 @@
     document.getElementById("setTelegramRoleOnly").checked = !!s.notify_role_change_only;
     const tgEmpty = document.getElementById("setTelegramNotifyEmpty");
     if (tgEmpty) tgEmpty.checked = !!s.notify_on_empty;
-    document.getElementById("setTelegramToken").value = s.bot_token || "";
-    document.getElementById("setTelegramChatId").value = s.chat_id || "";
+    const tgToken = document.getElementById("setTelegramToken");
+    const tgChat = document.getElementById("setTelegramChatId");
+    if (tgToken) {
+      tgToken.value = "";
+      tgToken.placeholder = s.bot_token_configured
+        ? "Bot token đã cấu hình — nhập token mới nếu muốn đổi"
+        : "Bot token (từ @BotFather)";
+    }
+    if (tgChat) {
+      tgChat.value = "";
+      tgChat.placeholder = s.chat_id_configured
+        ? "Chat ID đã cấu hình — nhập ID mới nếu muốn đổi"
+        : "Chat ID người/nhóm nhận (không phải ID bot)";
+    }
 
     pressSources = (data.press_sources || []).map((p) => ({
       name: p.name || "",

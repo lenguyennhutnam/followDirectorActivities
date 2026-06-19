@@ -69,7 +69,7 @@ function hideAddForm() {
   if (toggle) toggle.classList.remove("is-open");
 }
 
-function setEditMode(originalName, displayName, position, idx) {
+function setEditMode(originalName, displayName, position, bio, idx) {
   window.__EDITING_TARGET__ = originalName || null;
   const hint = document.getElementById("editHint");
   const hintText = document.getElementById("editHintText");
@@ -80,11 +80,13 @@ function setEditMode(originalName, displayName, position, idx) {
   const formActions = document.getElementById("targetFormActions");
   const nameInp = document.getElementById("targetName");
   const posInp = document.getElementById("targetPos");
+  const bioInp = document.getElementById("targetBio");
 
   if (originalName) {
     showAddForm();
     nameInp.value = displayName || originalName;
     posInp.value = position || "";
+    if (bioInp) bioInp.value = bio || "";
     hint?.classList.add("visible");
     if (hintText) hintText.textContent = "Đang sửa: " + originalName;
     if (btnLabel) btnLabel.textContent = "Lưu";
@@ -99,6 +101,7 @@ function setEditMode(originalName, displayName, position, idx) {
     hideAddForm();
     nameInp.value = "";
     posInp.value = "";
+    if (bioInp) bioInp.value = "";
     hint?.classList.remove("visible");
     if (btnLabel) btnLabel.textContent = "Thêm";
     if (btnIcon) btnIcon.setAttribute("data-lucide", "plus");
@@ -113,7 +116,7 @@ function setEditMode(originalName, displayName, position, idx) {
 function startEditTarget(idx) {
   const t = cfgTargets()[idx];
   if (!t) return;
-  setEditMode(t.name || "", t.name || "", t.position || "", idx);
+  setEditMode(t.name || "", t.name || "", t.position || "", t.bio || "", idx);
   document.getElementById("targetName")?.focus();
 }
 
@@ -145,12 +148,19 @@ function positionForTargetName(name) {
   return String(hit?.position || "").trim();
 }
 
-function matchesTargetSearch(name, position, snippet, q) {
+function bioForTargetName(name) {
+  const n = String(name || "").trim();
+  const hit = (cfgTargets() || []).find((t) => String(t?.name || "").trim() === n);
+  return String(hit?.bio || "").trim();
+}
+
+function matchesTargetSearch(name, position, bio, snippet, q) {
   if (!q) return true;
   const n = normalizeSearchText(name);
   const p = normalizeSearchText(position);
+  const b = normalizeSearchText(bio);
   const s = normalizeSearchText(snippet);
-  return n.includes(q) || p.includes(q) || s.includes(q);
+  return n.includes(q) || p.includes(q) || b.includes(q) || s.includes(q);
 }
 
 function applyTargetSearch() {
@@ -165,7 +175,8 @@ function applyTargetSearch() {
     totalTargets += 1;
     const name = el.querySelector(".t-name")?.textContent || "";
     const pos = el.querySelector(".t-pos")?.textContent || "";
-    const ok = matchesTargetSearch(name, pos, "", q);
+    const bio = el.querySelector(".t-bio")?.textContent || "";
+    const ok = matchesTargetSearch(name, pos, bio, "", q);
     el.classList.toggle("is-filtered-out", !ok);
     if (ok) visTargets += 1;
   });
@@ -181,8 +192,9 @@ function applyTargetSearch() {
     totalCards += 1;
     const name = el.dataset.targetName || "";
     const pos = el.dataset.targetPosition || "";
+    const bio = el.dataset.targetBio || "";
     const snippet = el.dataset.targetSnippet || "";
-    const ok = matchesTargetSearch(name, pos, snippet, q);
+    const ok = matchesTargetSearch(name, pos, bio, snippet, q);
     el.classList.toggle("is-filtered-out", !ok);
     if (ok) visCards += 1;
   });
@@ -195,8 +207,9 @@ function applyTargetSearch() {
   document.querySelectorAll("#recentFeedBody .feed-item").forEach((el) => {
     const name = el.dataset.targetName || "";
     const pos = positionForTargetName(name);
+    const bio = bioForTargetName(name);
     const snippet = el.querySelector(".fi-meta")?.textContent || "";
-    const ok = matchesTargetSearch(name, pos, snippet, q);
+    const ok = matchesTargetSearch(name, pos, bio, snippet, q);
     el.classList.toggle("is-filtered-out", !ok);
   });
 
@@ -309,6 +322,7 @@ function renderTargets(cfg) {
   targets.forEach((t, idx) => {
     const name = t.name || "";
     const pos = t.position || "";
+    const bio = t.bio || "";
     const href =
       "/target?name=" +
       encodeURIComponent(name) +
@@ -318,10 +332,12 @@ function renderTargets(cfg) {
     div.className = "t-item";
     div.dataset.targetName = name;
     div.dataset.targetPosition = pos;
+    div.dataset.targetBio = bio;
     div.innerHTML = `
       <div>
         <div class="t-name">${escapeHtml(name)}</div>
         ${pos ? `<div class="t-pos">${escapeHtml(pos)}</div>` : ""}
+        ${bio ? `<div class="t-bio">${escapeHtml(bio)}</div>` : ""}
       </div>
       <div class="t-ops">
         <div class="t-ops-more">
@@ -421,11 +437,13 @@ function renderSummaries(summaries) {
     const nCv = s.change_count ?? 0;
     const snippet = (s.headline || s.digest_short || "").trim().split("\n")[0];
     const pos = positionForTargetName(name);
+    const bio = bioForTargetName(name);
     const card = document.createElement("article");
     card.className = "activity-card";
     card.dataset.status = s.status || "";
     card.dataset.targetName = name;
     card.dataset.targetPosition = pos;
+    card.dataset.targetBio = bio;
     card.dataset.targetSnippet = snippet;
     card.innerHTML = `
       <div class="card-glow"></div>
@@ -437,6 +455,7 @@ function renderSummaries(summaries) {
           <div class="card-title-area">
             <h3>${escapeHtml(name)}</h3>
             ${pos ? `<p class="card-sub-pos">${escapeHtml(pos)}</p>` : ""}
+            ${bio ? `<p class="card-sub-bio">${escapeHtml(bio)}</p>` : ""}
           </div>
           <span class="${statusChipClass(s.status)}">${escapeHtml(statusLabel(s.status))}</span>
         </div>
@@ -892,6 +911,7 @@ function initDashboard() {
   const btnRefresh = document.getElementById("btnRefresh");
   const targetName = document.getElementById("targetName");
   const targetPos = document.getElementById("targetPos");
+  const targetBio = document.getElementById("targetBio");
   const btnAddTarget = document.getElementById("btnAddTarget");
 
   btnRunNow.addEventListener("click", () => {
@@ -941,14 +961,15 @@ function initDashboard() {
   btnAddTarget.addEventListener("click", async () => {
     const name = targetName.value.trim();
     const pos = targetPos.value.trim();
+    const bio = targetBio?.value.trim() || "";
     if (!name) {
       targetName.focus();
       return;
     }
     const original = editingTarget();
     const body = original
-      ? { name, position: pos, original_name: original }
-      : { name, position: pos };
+      ? { name, position: pos, bio, original_name: original }
+      : { name, position: pos, bio };
     try {
       btnAddTarget.disabled = true;
       await postJson("/config/targets/add", body);

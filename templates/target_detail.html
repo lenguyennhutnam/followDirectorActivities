@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Chi tiết đối tượng</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/static/css/isr-theme.css?v=5" />
+  <link rel="stylesheet" href="/static/css/isr-theme.css?v=7" />
   <script>
     (function () {
       try {
@@ -57,6 +57,11 @@
         <div>
           <h1 id="pageTitle">—</h1>
           <div class="sub" id="pageSub">Kết quả quét trong … giờ gần nhất</div>
+          <div class="detail-hero-actions">
+            <button type="button" class="btn btn-glass btn-sm" id="btnToggleBio" hidden>
+              <i data-lucide="id-card"></i> Tiểu sử
+            </button>
+          </div>
           <div class="stat-row" id="statRow" style="display:none">
             <div class="stat hd"><div class="lbl">Hoạt động</div><div class="val" id="statHd">0</div></div>
             <div class="stat cv"><div class="lbl">Chức vụ</div><div class="val" id="statCv">0</div></div>
@@ -65,6 +70,19 @@
         <span class="detail-spin" id="spin" style="display:none"></span>
       </div>
     </div>
+
+    <section class="block detail-bio-block" id="sec-bio" hidden>
+      <div class="block-hd">
+        <i data-lucide="id-card"></i>
+        <h2>Tiểu sử</h2>
+        <button type="button" class="btn btn-glass btn-icon" id="btnCloseBio" title="Đóng tiểu sử">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      <div class="block-bd">
+        <div class="detail-bio-text" id="pageBioText"></div>
+      </div>
+    </section>
 
     <section class="block" id="sec-verdict" style="display:none">
       <div class="block-hd"><i data-lucide="check-circle-2"></i><h2>Tóm tắt</h2></div>
@@ -136,6 +154,15 @@
       if (status === 'change') return 'verdict warn';
       if (status === 'stable_activity') return 'verdict ok';
       return 'verdict neutral';
+    }
+    function toggleBio(open) {
+      const sec = document.getElementById('sec-bio');
+      const btn = document.getElementById('btnToggleBio');
+      if (!sec || !btn || btn.hidden) return;
+      const show = open === undefined ? sec.hidden : !!open;
+      sec.hidden = !show;
+      btn.setAttribute('aria-expanded', show ? 'true' : 'false');
+      if (show) sec.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
     // ── Tab state ──────────────────────────────────────────────────
@@ -282,6 +309,19 @@
         }
 
         const sum = data.summary || {};
+        const profile = data.target_profile || {};
+        const position = (profile.position || '').trim();
+        const bio = (profile.bio || '').trim();
+        document.getElementById('pageSub').textContent =
+          (position ? position + ' · ' : '') + 'Thời gian ' + hours + ' giờ';
+        document.getElementById('pageBioText').textContent = bio || 'Chưa có tiểu sử cho đối tượng này.';
+        const btnBio = document.getElementById('btnToggleBio');
+        if (btnBio) {
+          btnBio.hidden = !bio;
+          btnBio.setAttribute('aria-expanded', 'false');
+        }
+        if (!bio) document.getElementById('sec-bio').hidden = true;
+
         const vLine = document.getElementById('verdictLine');
         vLine.className = verdictClass(sum.status);
         vLine.textContent = sum.headline || sum.digest_short || '—';
@@ -397,6 +437,8 @@
       if (window.lucide) lucide.createIcons();
 
       document.getElementById('btnScanTarget')?.addEventListener('click', scanCurrentTarget);
+      document.getElementById('btnToggleBio')?.addEventListener('click', () => toggleBio());
+      document.getElementById('btnCloseBio')?.addEventListener('click', () => toggleBio(false));
 
       // Tab switching
       document.querySelectorAll('.feed-tab').forEach(btn => {
